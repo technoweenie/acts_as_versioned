@@ -1,57 +1,59 @@
-#Copyright (c) 2005 Rick Olson
-#
-#Permission is hereby granted, free of charge, to any person obtaining
-#a copy of this software and associated documentation files (the
-#"Software"), to deal in the Software without restriction, including
-#without limitation the rights to use, copy, modify, merge, publish,
-#distribute, sublicense, and/or sell copies of the Software, and to
-#permit persons to whom the Software is furnished to do so, subject to
-#the following conditions:
-#
-#The above copyright notice and this permission notice shall be
-#included in all copies or substantial portions of the Software.
-#
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-#EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-#MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-#NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-#LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-#OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-#WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# Copyright (c) 2005 Rick Olson
+# 
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+# 
+# The above copyright notice and this permission notice shall be
+# included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-module ActiveRecord
+module ActiveRecord #:nodoc:
   module Acts #:nodoc:
-    module Versioned #:nodoc:
+    # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a 
+    # versioned table ready and that your model has a version field.  This works with optimisic locking if the lock_version
+    # column is present as well.
+    #
+    #   class Page < ActiveRecord::Base
+    #     # assumes pages_versions table
+    #     acts_as_versioned
+    #   end
+    #
+    # Example:
+    #
+    #   page = Page.create(:title => 'hello world!')
+    #   page.version       # => 1
+    #
+    #   page.title = 'hello world'
+    #   page.save
+    #   page.version       # => 2
+    #   page.versions.size # => 2
+    #
+    #   page.revert_to(1)  # using version number
+    #   page.title         # => 'hello world!'
+    #
+    #   page.revert_to(page.versions.last) # using versioned instance
+    #   page.title         # => 'hello world'
+    #
+    # See ActiveRecord::Acts::Versioned::ClassMethods#acts_as_versioned for configuration options
+    module Versioned
       def self.included(base) # :nodoc:
         base.extend ClassMethods
       end
 
-      # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a 
-      # versioned table ready and that your model has a version field.  This works with optimisic locking if the lock_version
-      # column is present as well.
-      #
-      #   class Page < ActiveRecord::Base
-      #     # assumes pages_versions table
-      #     acts_as_versioned
-      #   end
-      #
-      #   Example:
-      #
-      #   page = Page.create(:title => 'hello world!')
-      #   page.version       # => 1
-      #
-      #   page.title = 'hello world'
-      #   page.save
-      #   page.version       # => 2
-      #   page.versions.size # => 2
-      #
-      #   page.revert_to(1)  # using version number
-      #   page.title         # => 'hello world!'
-      #
-      #   page.revert_to(page.versions.last) # using versioned instance
-      #   page.title         # => 'hello world'
       module ClassMethods
-        # Configuration options are:
+        # == Configuration options
         #
         # * <tt>class_name</tt> - versioned model class name (default: PageVersion in the above example)
         # * <tt>table_name</tt> - versioned model table name (default: page_versions in the above example)
@@ -60,20 +62,44 @@ module ActiveRecord
         # * <tt>version_column</tt> - name of the column in the model that keeps the version number (default: version)
         # * <tt>limit</tt> - number of revisions to keep, defaults to unlimited
         # * <tt>if</tt> - symbol of method to check before saving a new version.  If this method returns false, a new version is not saved.
-        #       For finer control, pass either a Proc or modify Model#version_condition_met?
+        #   For finer control, pass either a Proc or modify Model#version_condition_met?
         #
-        #         acts_as_versioned :if => Proc.new { |auction| !auction.expired? }
+        #     acts_as_versioned :if => Proc.new { |auction| !auction.expired? }
         #
-        #         or...
+        #   or...
         #
-        #         class Auction
-        #           def version_condition_met? # totally bypasses the <tt>:if</tt> option
-        #             !expired?
-        #           end
-        #         end
+        #     class Auction
+        #       def version_condition_met? # totally bypasses the <tt>:if</tt> option
+        #         !expired?
+        #       end
+        #     end
         #
         # * <tt>if_changed</tt> - Simple way of specifying attributes that are required to be changed before saving a model.  This takes
-        #       either a symbol or array of symbols.
+        #   either a symbol or array of symbols.
+        #
+        # == Database Schema
+        #
+        # The model that you're versioning needs to have a 'version' attribute. The model is versioned 
+        # into a table called #{model}_versions where the model name is singlular. The _versions table should 
+        # contain all the fields you want versioned, the same version column, and a #{model}_id foreign key field.
+        #
+        # A lock_version field is also accepted if your model uses Optimistic Locking.  If your table uses Single Table inheritance,
+        # then that field is reflected in the versioned model as 'versioned_type' by default.
+        #
+        # Acts_as_versioned comes prepared with the ActiveRecord::Acts::Versioned::ActMethods::ClassMethods#create_versioned_table 
+        # method, perfect for a migration.  It will also create the version column if the main model does not already have it.
+        #
+        #   class AddVersions < ActiveRecord::Migration
+        #     def self.up
+        #       # create_versioned_table takes the same options hash
+        #       # that create_table does
+        #       Post.create_versioned_table
+        #     end
+        #   
+        #     def self.down
+        #       Post.drop_versioned_table
+        #     end
+        #   end
         def acts_as_versioned(options = {})
           # don't allow multiple calls
           return if defined?(self.versioned_class_name)
@@ -262,17 +288,26 @@ module ActiveRecord
         unless defined?(ACTS_AS_VERSIONED_CALLBACKS)
           ACTS_AS_VERSIONED_CALLBACKS =  [:set_new_version, :save_version_on_create, :save_version, :clear_changed_attributes]
         end
+
+        ACTS_AS_VERSIONED_CALLBACKS.each do |attr_name| 
+          alias_method "orig_#{attr_name}".to_sym, attr_name
+        end
         
-        ACTS_AS_VERSIONED_CALLBACKS.each { |attr_name| alias_method "orig_#{attr_name}".to_sym, attr_name }
-        def empty_callback() end
+        def empty_callback() end #:nodoc:
+
         def enable_acts_as_versioned_callbacks
           self.class.class_eval do 
-            ACTS_AS_VERSIONED_CALLBACKS.each { |attr_name| alias_method attr_name, "orig_#{attr_name}".to_sym }
+            ACTS_AS_VERSIONED_CALLBACKS.each do |attr_name|
+              alias_method attr_name, "orig_#{attr_name}".to_sym
+            end
           end
         end
+
         def disable_acts_as_versioned_callbacks
           self.class.class_eval do 
-            ACTS_AS_VERSIONED_CALLBACKS.each { |attr_name| alias_method attr_name, :empty_callback }
+            ACTS_AS_VERSIONED_CALLBACKS.each do |attr_name| 
+              alias_method attr_name, :empty_callback
+            end
           end
         end
 
