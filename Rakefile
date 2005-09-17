@@ -62,7 +62,7 @@ end
 
 desc "Publish the API documentation"
 task :pdoc => [:rdoc] do 
-  Rake::SshDirPublisher.new(PROD_HOST, "public_html/code/doc/acts_as_versioned", "doc").upload
+  Rake::SshDirPublisher.new(PROD_HOST, "public_html/code/doc/#{PKG_NAME}", "doc").upload
 end
 
 desc 'Publish the gem and API docs'
