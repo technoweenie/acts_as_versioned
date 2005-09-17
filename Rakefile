@@ -26,7 +26,7 @@ Rake::RDocTask.new do |rdoc|
   rdoc.title    = "#{PKG_NAME} -- Simple versioning with active record models"
   rdoc.options << '--line-numbers --inline-source --accessor cattr_accessor=object'
   rdoc.template = "#{ENV['template']}.rb" if ENV['template']
-  rdoc.rdoc_files.include('RUNNING_UNIT_TESTS', 'CHANGELOG')
+  rdoc.rdoc_files.include('README', 'CHANGELOG', 'RUNNING_UNIT_TESTS')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
@@ -53,7 +53,7 @@ Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_tar = true
 end
 
-desc "Publish the beta gem"
+desc "Publish the gem"
 task :pgem => [:package] do 
   Rake::SshFilePublisher.new(PROD_HOST, "public_html/code/gems", "pkg", "#{PKG_FILE_NAME}.gem").upload
   Rake::SshFilePublisher.new(PROD_HOST, "public_html/code/pkg", "pkg", "#{PKG_FILE_NAME}.tgz").upload
@@ -64,3 +64,6 @@ desc "Publish the API documentation"
 task :pdoc => [:rdoc] do 
   Rake::SshDirPublisher.new(PROD_HOST, "public_html/code/doc/acts_as_versioned", "doc").upload
 end
+
+desc 'Publish the gem and API docs'
+task :publish => [:pgem, :pdoc]
