@@ -102,7 +102,7 @@ module ActiveRecord #:nodoc:
         #   end
         def acts_as_versioned(options = {})
           # don't allow multiple calls
-          return if defined?(self.versioned_class_name)
+          return if self.included_modules.include?(ActiveRecord::Acts::Versioned::ActMethods)
 
           class_eval do
             include ActiveRecord::Acts::Versioned::ActMethods
