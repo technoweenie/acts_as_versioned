@@ -64,7 +64,7 @@ desc 'Publish the gem and API docs'
 task :publish => [:pdoc, :rubyforge_upload]
 
 desc "Publish the release files to RubyForge."
-task :rubyforge_upload do
+task :rubyforge_upload => :package do
   files = %w(gem tgz).map { |ext| "pkg/#{PKG_FILE_NAME}.#{ext}" }
 
   if RUBY_FORGE_PROJECT then
