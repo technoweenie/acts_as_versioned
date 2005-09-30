@@ -1,5 +1,6 @@
 require 'abstract_unit'
 require 'fixtures/page'
+require 'fixtures/widget'
 
 class VersionedTest < Test::Unit::TestCase
   fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions
@@ -224,5 +225,14 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 2, locked_pages(:welcome).find_versions(:conditions => ['title LIKE ?', '%web%']).length
     assert_equal 0, locked_pages(:thinking).find_versions(:conditions => ['title LIKE ?', '%web%']).length
     assert_equal 2, locked_pages(:welcome).find_versions.length
+  end
+  
+  def test_with_sequence
+    assert_equal 'widgets_seq', Widget.versioned_class.sequence_name
+    Widget.create :name => 'new widget'
+    Widget.create :name => 'new widget'
+    Widget.create :name => 'new widget'
+    assert_equal 3, Widget.count
+    assert_equal 3, Widget.versions.size
   end
 end

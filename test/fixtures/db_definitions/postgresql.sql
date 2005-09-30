@@ -32,3 +32,21 @@ CREATE TABLE locked_pages_revisions (
   version_type VARCHAR(255),
   updated_at   TIMESTAMP
 );
+
+CREATE TABLE widgets (
+  id   SERIAL,
+  name VARCHAR(50),
+  version    INTEGER,
+  updated_at   TIMESTAMP
+);
+
+CREATE SEQUENCE widgets_seq START 101;
+
+CREATE TABLE widget_versions (
+  id        INTEGER DEFAULT nextval('widgets_seq'),
+  widget_id INTEGER,
+  name      VARCHAR(50),
+  version    INTEGER,
+  updated_at   TIMESTAMP,
+  PRIMARY KEY (id)
+);

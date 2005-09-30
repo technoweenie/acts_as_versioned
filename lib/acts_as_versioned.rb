@@ -60,6 +60,7 @@ module ActiveRecord #:nodoc:
         # * <tt>foreign_key</tt> - foreign key used to relate the versioned model to the original model (default: page_id in the above example)
         # * <tt>inheritance_column</tt> - name of the column to save the model's inheritance_column value for STI.  (default: versioned_type)
         # * <tt>version_column</tt> - name of the column in the model that keeps the version number (default: version)
+        # * <tt>sequence_name</tt> - name of the custom sequence to be used by the versioned model.
         # * <tt>limit</tt> - number of revisions to keep, defaults to unlimited
         # * <tt>if</tt> - symbol of method to check before saving a new version.  If this method returns false, a new version is not saved.
         #   For finer control, pass either a Proc or modify Model#version_condition_met?
@@ -107,7 +108,7 @@ module ActiveRecord #:nodoc:
           class_eval do
             include ActiveRecord::Acts::Versioned::ActMethods
             cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
-              :version_column, :max_version_limit, :track_changed_attributes, :version_condition
+              :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name
             attr_accessor :changed_attributes
           end
           
@@ -116,6 +117,7 @@ module ActiveRecord #:nodoc:
           self.versioned_table_name = options[:table_name] || "#{table_name_prefix}#{Inflector.underscore(Inflector.demodulize(class_name_of_active_record_descendant(self)))}_versions#{table_name_suffix}"            
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
           self.version_column = options[:version_column] || 'version'
+          self.version_sequence_name = options[:sequence_name]
           self.max_version_limit = options[:limit].to_i
           self.version_condition = options[:if] || true
 
@@ -143,12 +145,16 @@ module ActiveRecord #:nodoc:
           end
           
           # create the dynamic versioned model
-          eval <<-EOV
+          # maybe if i sit down long enough i can think up a better way to do this.
+          dynamic_model = <<-EOV
             class ActiveRecord::Acts::Versioned::#{versioned_class_name} < ActiveRecord::Base
               set_table_name "#{versioned_table_name}"
               belongs_to :#{self.to_s.demodulize.underscore}, :class_name => "#{self.to_s}"
-            end
           EOV
+          
+          dynamic_model += %Q{set_sequence_name "#{version_sequence_name}"\n} if version_sequence_name
+          
+          eval dynamic_model + 'end'
         end
       end
     
@@ -191,7 +197,7 @@ module ActiveRecord #:nodoc:
         
         # Finds versions of this model.  Takes an options hash like <tt>find</tt>
         def find_versions(options = {})
-          versions.find(:all, {:order => 'version'}.merge(options))
+          versions.find(:all, options)
         end
 
         # Reverts a model to a given version.  Takes either a version number or an instance of the versioned model
