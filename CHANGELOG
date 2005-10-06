@@ -1,6 +1,11 @@
-*0.1.4* 
+*0.2* 
 
-* (30 Sep 2005) fixed bug where find_versions() would order by 'version' twice.
+* (6 Oct 2005)  added find_versions and find_version class methods.
+
+* (6 Oct 2005)  removed transaction from create_versioned_table().  
+  this way you can specify your own transaction around a group of operations.
+
+* (30 Sep 2005) fixed bug where find_versions() would order by 'version' twice. (found by Joe Clark)
 
 * (26 Sep 2005) added :sequence_name option to acts_as_versioned to set the sequence name on the versioned model
 

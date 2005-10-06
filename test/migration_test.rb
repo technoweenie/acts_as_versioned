@@ -7,9 +7,6 @@ if ActiveRecord::Base.connection.supports_migrations?
   end
 
   class MigrationTest < Test::Unit::TestCase
-    def setup
-    end
-
     def teardown
       ActiveRecord::Base.connection.initialize_schema_information
       ActiveRecord::Base.connection.update "UPDATE schema_info SET version = 0"
@@ -21,9 +18,14 @@ if ActiveRecord::Base.connection.supports_migrations?
         
     def test_versioned_migration
       assert_raises(ActiveRecord::StatementInvalid) { Thing.create :title => 'blah blah' }
+      # take 'er up
       ActiveRecord::Migrator.up(File.dirname(__FILE__) + '/fixtures/migrations/')
       t = Thing.create :title => 'blah blah'
       assert_equal 1, t.versions.size
+
+      # now lets take 'er back down
+      ActiveRecord::Migrator.down(File.dirname(__FILE__) + '/fixtures/migrations/')
+      assert_raises(ActiveRecord::StatementInvalid) { Thing.create :title => 'blah blah' }
     end
   end
 end

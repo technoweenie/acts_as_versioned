@@ -318,6 +318,20 @@ module ActiveRecord #:nodoc:
         end
 
         module ClassMethods
+          # Finds a specific version of a specific row of this model
+          def find_version(id, version)
+            find_versions(id, 
+              :conditions => ["#{versioned_foreign_key} = ? AND version = ?", id, version], 
+              :limit => 1).first
+          end
+        
+          # Finds versions of a specific model.  Takes an options hash like <tt>find</tt>
+          def find_versions(id, options = {})
+            versioned_class.find :all, {
+              :conditions => ["#{versioned_foreign_key} = ?", id],
+              :order      => 'version' }.merge(options)
+          end
+        
           # Returns an array of columns that are versioned.  See non_versioned_fields
           def versioned_columns
             self.columns.select { |c| !non_versioned_fields.include?(c.name) }
@@ -335,34 +349,32 @@ module ActiveRecord #:nodoc:
           
           # Rake migration task to create the versioned table using options passed to acts_as_versioned
           def create_versioned_table(create_table_options = {})
-            self.transaction do
-              # create version column in main table if it does not exist
-              if !self.content_columns.find { |c| %w(version lock_version).include? c.name }
-                self.connection.add_column table_name, :version, :integer
-              end
-              
-              self.connection.create_table(versioned_table_name, create_table_options) do |t|
-                t.column versioned_foreign_key, :integer
-                t.column :version, :integer
-              end
-              
-              updated_col = nil
-              self.versioned_columns.each do |col| 
-                updated_col = col if !updated_col and %(updated_at updated_on).include?(col.name)
-                self.connection.add_column versioned_table_name, col.name, col.type, 
-                  :limit => col.limit, 
-                  :default => col.default
-              end
-          
-              if type_col = self.columns_hash[inheritance_column]
-                self.connection.add_column versioned_table_name, versioned_inheritance_column, type_col.type, 
-                  :limit => type_col.limit, 
-                  :default => type_col.default
-              end
-      
-              if updated_col.nil?
-                self.connection.add_column versioned_table_name, :updated_at, :timestamp
-              end
+            # create version column in main table if it does not exist
+            if !self.content_columns.find { |c| %w(version lock_version).include? c.name }
+              self.connection.add_column table_name, :version, :integer
+            end
+            
+            self.connection.create_table(versioned_table_name, create_table_options) do |t|
+              t.column versioned_foreign_key, :integer
+              t.column :version, :integer
+            end
+            
+            updated_col = nil
+            self.versioned_columns.each do |col| 
+              updated_col = col if !updated_col and %(updated_at updated_on).include?(col.name)
+              self.connection.add_column versioned_table_name, col.name, col.type, 
+                :limit => col.limit, 
+                :default => col.default
+            end
+        
+            if type_col = self.columns_hash[inheritance_column]
+              self.connection.add_column versioned_table_name, versioned_inheritance_column, type_col.type, 
+                :limit => type_col.limit, 
+                :default => type_col.default
+            end
+    
+            if updated_col.nil?
+              self.connection.add_column versioned_table_name, :updated_at, :timestamp
             end
           end
           
