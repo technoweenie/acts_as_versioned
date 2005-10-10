@@ -1,3 +1,7 @@
+*0.2.1*
+
+* (6 Oct 2005) renamed dirty? to changed? to keep it uniform.  it was aliased to keep it backwards compatible.
+
 *0.2* 
 
 * (6 Oct 2005)  added find_versions and find_version class methods.

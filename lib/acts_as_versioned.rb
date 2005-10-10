@@ -137,7 +137,7 @@ module ActiveRecord #:nodoc:
               options[:if_changed] = [options[:if_changed]] unless options[:if_changed].is_a?(Array)
               options[:if_changed].each do |attr_name|
                 define_method("#{attr_name}=") do |value|
-                  (self.changed_attributes ||= []) << attr_name.to_s unless self.dirty?(attr_name) or self.send(attr_name) == value
+                  (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) or self.send(attr_name) == value
                   write_attribute(attr_name.to_s, value)
                 end
               end
@@ -234,13 +234,16 @@ module ActiveRecord #:nodoc:
           self.attributes.keys.select { |k| !self.class.non_versioned_fields.include?(k) }
         end
         
-        # If called with no parameters, gets whether the current model is dirty and needs to be versioned.
-        # If called with a single parameter, gets whether the parameter is currently dirty.
-        def dirty?(attr_name = nil)
+        # If called with no parameters, gets whether the current model has changed and needs to be versioned.
+        # If called with a single parameter, gets whether the parameter has changed.
+        def changed?(attr_name = nil)
           attr_name.nil? ?
             (!self.class.track_changed_attributes or (changed_attributes and changed_attributes.length > 0)) :
             (changed_attributes and changed_attributes.include?(attr_name.to_s))
         end
+        
+        # keep old dirty? method
+        alias_method :dirty?, :changed?
         
         # Clones a model.  Used when saving a new version or reverting a model's version.
         def clone_versioned_model(orig_model, new_model)
@@ -255,9 +258,9 @@ module ActiveRecord #:nodoc:
           end
         end
         
-        # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>dirty?</tt>.
+        # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>changed?</tt>.
         def save_version?
-          version_condition_met? and dirty?
+          version_condition_met? and changed?
         end
         
         # Checks condition set in the :if option to check whether a revision should be created or not.  Override this for
@@ -285,7 +288,7 @@ module ActiveRecord #:nodoc:
           connection.select_one("SELECT MAX(version)+1 AS next_version FROM #{self.class.versioned_table_name} WHERE #{self.class.versioned_foreign_key} = #{self.id}")['next_version'] || 1
         end
         
-        # clears current dirty attributes.  Called after save.
+        # clears current changed attributes.  Called after save.
         def clear_changed_attributes
           self.changed_attributes = []
         end
