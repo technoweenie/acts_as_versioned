@@ -1,3 +1,7 @@
+*0.2.2*
+
+* (3 Nov 2005) added documentation note to #acts_as_versioned [Martin Jul]
+
 *0.2.1*
 
 * (6 Oct 2005) renamed dirty? to changed? to keep it uniform.  it was aliased to keep it backwards compatible.

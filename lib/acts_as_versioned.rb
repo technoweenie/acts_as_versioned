@@ -25,6 +25,9 @@ module ActiveRecord #:nodoc:
     # versioned table ready and that your model has a version field.  This works with optimisic locking if the lock_version
     # column is present as well.
     #
+    # The class for the versioned model is derived the first time it is seen. Therefore, if you change your database schema you have to restart
+    # your container for the changes to be reflected. In development mode this usually means restarting WEBrick.
+    #
     #   class Page < ActiveRecord::Base
     #     # assumes pages_versions table
     #     acts_as_versioned
