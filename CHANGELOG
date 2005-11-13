@@ -1,3 +1,7 @@
+*0.2.3*
+
+* (12 Nov 2005) fixed bug with old behavior of #blank? [Michael Schuerig]
+
 *0.2.2*
 
 * (3 Nov 2005) added documentation note to #acts_as_versioned [Martin Jul]

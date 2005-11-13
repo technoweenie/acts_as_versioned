@@ -9,25 +9,27 @@ require 'rake/testtask'
 require 'rake/contrib/rubyforgepublisher'
 
 PKG_NAME           = 'acts_as_versioned'
-PKG_VERSION        = '0.2.2'
+PKG_VERSION        = '0.2.3'
 PKG_FILE_NAME      = "#{PKG_NAME}-#{PKG_VERSION}"
 PROD_HOST          = "technoweenie@bidwell.textdrive.com"
 RUBY_FORGE_PROJECT = 'ar-versioned'
 RUBY_FORGE_USER    = 'technoweenie'
 
-for adapter in %w( mysql postgresql sqlite sqlite3 sqlserver sqlserver_odbc db2 oci )
-  Rake::TestTask.new("test_#{adapter}") do |t|
-    t.libs << "test" << "test/connections/native_#{adapter}"
-    t.pattern = "test/*_test{,_#{adapter}}.rb"
-    t.verbose = true
-  end
+desc 'Default: run unit tests.'
+task :default => :test
+
+desc 'Test the calculations plugin.'
+Rake::TestTask.new(:test) do |t|
+  t.libs << 'lib'
+  t.pattern = 'test/**/*_test.rb'
+  t.verbose = true
 end
 
-Rake::RDocTask.new do |rdoc|
-  rdoc.rdoc_dir = 'html'
+desc 'Generate documentation for the calculations plugin.'
+Rake::RDocTask.new(:rdoc) do |rdoc|
+  rdoc.rdoc_dir = 'rdoc'
   rdoc.title    = "#{PKG_NAME} -- Simple versioning with active record models"
-  rdoc.options << '--line-numbers --inline-source --accessor cattr_accessor=object'
-  rdoc.template = "#{ENV['template']}.rb" if ENV['template']
+  rdoc.options << '--line-numbers --inline-source'
   rdoc.rdoc_files.include('README', 'CHANGELOG', 'RUNNING_UNIT_TESTS')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end

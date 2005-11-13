@@ -1,4 +1,4 @@
-require 'abstract_unit'
+require File.join(File.dirname(__FILE__), 'abstract_unit')
 
 if ActiveRecord::Base.connection.supports_migrations? 
   class Thing < ActiveRecord::Base
@@ -7,6 +7,7 @@ if ActiveRecord::Base.connection.supports_migrations?
   end
 
   class MigrationTest < Test::Unit::TestCase
+    self.use_transactional_fixtures = false
     def teardown
       ActiveRecord::Base.connection.initialize_schema_information
       ActiveRecord::Base.connection.update "UPDATE schema_info SET version = 0"

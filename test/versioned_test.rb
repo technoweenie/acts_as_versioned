@@ -1,6 +1,6 @@
-require 'abstract_unit'
-require 'fixtures/page'
-require 'fixtures/widget'
+require File.join(File.dirname(__FILE__), 'abstract_unit')
+require File.join(File.dirname(__FILE__), 'fixtures/page')
+require File.join(File.dirname(__FILE__), 'fixtures/widget')
 
 class VersionedTest < Test::Unit::TestCase
   fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions
@@ -233,6 +233,6 @@ class VersionedTest < Test::Unit::TestCase
     Widget.create :name => 'new widget'
     Widget.create :name => 'new widget'
     assert_equal 3, Widget.count
-    assert_equal 3, Widget.versions.size
+    assert_equal 3, Widget.versioned_class.count
   end
 end
