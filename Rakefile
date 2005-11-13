@@ -40,12 +40,13 @@ spec = Gem::Specification.new do |s|
   s.platform        = Gem::Platform::RUBY
   s.summary         = "Simple versioning with active record models"
   s.files           = FileList["{lib,test}/**/*"].to_a + %w(README MIT-LICENSE CHANGELOG RUNNING_UNIT_TESTS)
-  s.files.delete      "test/fixtures/activerecord_versioned.sqlite"
-  s.files.delete      "test/fixtures/activerecord_versioned.sqlite3"
+  s.files.delete      "acts_as_versioned_plugin.sqlite.db"
+  s.files.delete      "acts_as_versioned_plugin.sqlite3.db"
+  s.files.delete      "test/debug.log"
   s.require_path    = 'lib'
   s.autorequire     = 'acts_as_versioned'
   s.has_rdoc        = true
-  s.test_file       = 'test/tests.rb'
+  s.test_files      = Dir['test/**/*_test.rb']
   s.add_dependency    'activerecord', '>= 1.10.1'
   s.add_dependency    'activesupport', '>= 1.1.1'
   s.author          = "Rick Olson"

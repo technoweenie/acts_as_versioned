@@ -1,6 +1,7 @@
 *0.2.3*
 
 * (12 Nov 2005) fixed bug with old behavior of #blank? [Michael Schuerig]
+* (12 Nov 2005) updated tests to use ActiveRecord Schema
 
 *0.2.2*
 
