@@ -24,7 +24,7 @@ for adapter in %w( mysql postgresql sqlite sqlite3 sqlserver sqlserver_odbc db2 
 end
 
 Rake::RDocTask.new do |rdoc|
-  rdoc.rdoc_dir = 'doc'
+  rdoc.rdoc_dir = 'html'
   rdoc.title    = "#{PKG_NAME} -- Simple versioning with active record models"
   rdoc.options << '--line-numbers --inline-source --accessor cattr_accessor=object'
   rdoc.template = "#{ENV['template']}.rb" if ENV['template']
