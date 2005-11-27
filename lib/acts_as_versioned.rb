@@ -79,7 +79,12 @@ module ActiveRecord #:nodoc:
         #     end
         #
         # * <tt>if_changed</tt> - Simple way of specifying attributes that are required to be changed before saving a model.  This takes
-        #   either a symbol or array of symbols.
+        #   either a symbol or array of symbols.  WARNING - This will attempt to overwrite any attribute setters you may have.  
+        #   Add this instead:
+        # 
+        #     def name=(new_name)
+        #       write_changed_attribute :name, new_name
+        #     end
         #
         # == Database Schema
         #
@@ -104,6 +109,7 @@ module ActiveRecord #:nodoc:
         #       Post.drop_versioned_table
         #     end
         #   end
+        # 
         def acts_as_versioned(options = {})
           # don't allow multiple calls
           return if self.included_modules.include?(ActiveRecord::Acts::Versioned::ActMethods)
@@ -140,8 +146,7 @@ module ActiveRecord #:nodoc:
               options[:if_changed] = [options[:if_changed]] unless options[:if_changed].is_a?(Array)
               options[:if_changed].each do |attr_name|
                 define_method("#{attr_name}=") do |value|
-                  (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) or self.send(attr_name) == value
-                  write_attribute(attr_name.to_s, value)
+                  write_changed_attribute attr_name, value
                 end
               end
             end
@@ -294,6 +299,11 @@ module ActiveRecord #:nodoc:
         # clears current changed attributes.  Called after save.
         def clear_changed_attributes
           self.changed_attributes = []
+        end
+
+        def write_changed_attribute(attr_name, attr_value)
+          (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) or self.send(attr_name) == attr_value
+          write_attribute(attr_name.to_s, attr_value)
         end
 
         private

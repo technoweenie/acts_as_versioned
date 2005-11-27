@@ -1,3 +1,7 @@
+*0.2.4*
+
+* (27 Nov 2005) added note about possible destructive behavior of if_changed? [Michael Schuerig]
+
 *0.2.3*
 
 * (12 Nov 2005) fixed bug with old behavior of #blank? [Michael Schuerig]
