@@ -1,11 +1,19 @@
 class Page < ActiveRecord::Base
-  cattr_accessor :feeling_good
-  @@feeling_good = true
-  
-  acts_as_versioned :if => :feeling_good?
+  acts_as_versioned :if => :feeling_good? do
+    def self.included(base)
+      base.cattr_accessor :feeling_good
+      base.feeling_good = true
+    end
     
-  def feeling_good?
-    @@feeling_good == true
+    def feeling_good?
+      @@feeling_good == true
+    end
+  end
+end
+
+module LockedPageExtension
+  def hello_world
+    'hello_world'
   end
 end
 
@@ -17,7 +25,8 @@ class LockedPage < ActiveRecord::Base
     :class_name         => 'LockedPageRevision',
     :version_column     => :lock_version,
     :limit              => 2,
-    :if_changed         => :title
+    :if_changed         => :title,
+    :extend             => LockedPageExtension
 end
 
 class SpecialLockedPage < LockedPage

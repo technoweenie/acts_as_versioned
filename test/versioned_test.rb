@@ -24,8 +24,20 @@ class VersionedTest < Test::Unit::TestCase
   end
 
   def test_versioned_class_name
-    assert_equal 'PageVersion', Page.versioned_class_name
+    assert_equal 'Version', Page.versioned_class_name
     assert_equal 'LockedPageRevision', LockedPage.versioned_class_name
+  end
+
+  def test_versioned_class
+    assert_equal Page::Version,                  Page.versioned_class
+    assert_equal LockedPage::LockedPageRevision, LockedPage.versioned_class
+  end
+
+  def test_special_methods
+    assert_nothing_raised { pages(:welcome).feeling_good? }
+    assert_nothing_raised { pages(:welcome).versions.first.feeling_good? }
+    assert_nothing_raised { locked_pages(:welcome).hello_world }
+    assert_nothing_raised { locked_pages(:welcome).versions.first.hello_world }
   end
 
   def test_rollback_with_version_class

@@ -1,3 +1,8 @@
+*0.3*
+
+* (2 Jan 2005) added ability to share a mixin with versioned class
+* (2 Jan 2005) changed the dynamic version model to MyModel::Version
+
 *0.2.4*
 
 * (27 Nov 2005) added note about possible destructive behavior of if_changed? [Michael Schuerig]

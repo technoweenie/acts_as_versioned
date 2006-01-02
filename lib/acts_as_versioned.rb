@@ -80,11 +80,39 @@ module ActiveRecord #:nodoc:
         #
         # * <tt>if_changed</tt> - Simple way of specifying attributes that are required to be changed before saving a model.  This takes
         #   either a symbol or array of symbols.  WARNING - This will attempt to overwrite any attribute setters you may have.  
-        #   Add this instead:
+        #   Use this instead if you want to write your own attribute setters (and ignore if_changed):
         # 
         #     def name=(new_name)
         #       write_changed_attribute :name, new_name
         #     end
+        #
+        # * <tt>extend</tt> - Lets you specify a module to be mixed in both the original and versioned models.  You can also just pass a block
+        #   to create an anonymous mixin:
+        #
+        #     class Auction
+        #       acts_as_versioned do
+        #         def started?
+        #           !started_at.nil?
+        #         end
+        #       end
+        #     end
+        #
+        #   or...
+        #
+        #     module AuctionExtension
+        #       def started?
+        #         !started_at.nil?
+        #       end
+        #     end
+        #     class Auction
+        #       acts_as_versioned :extend => AuctionExtension
+        #     end
+        #
+        #  Example code:
+        #
+        #    @auction = Auction.find(1)
+        #    @auction.started?
+        #    @auction.versions.first.started?
         #
         # == Database Schema
         #
@@ -110,7 +138,7 @@ module ActiveRecord #:nodoc:
         #     end
         #   end
         # 
-        def acts_as_versioned(options = {})
+        def acts_as_versioned(options = {}, &extension)
           # don't allow multiple calls
           return if self.included_modules.include?(ActiveRecord::Acts::Versioned::ActMethods)
 
@@ -121,7 +149,7 @@ module ActiveRecord #:nodoc:
             attr_accessor :changed_attributes
           end
           
-          self.versioned_class_name = options[:class_name] || "#{self.to_s.demodulize}Version"
+          self.versioned_class_name = options[:class_name] || "Version"
           self.versioned_foreign_key = options[:foreign_key] || self.to_s.foreign_key
           self.versioned_table_name = options[:table_name] || "#{table_name_prefix}#{Inflector.underscore(Inflector.demodulize(class_name_of_active_record_descendant(self)))}_versions#{table_name_suffix}"            
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
@@ -130,9 +158,18 @@ module ActiveRecord #:nodoc:
           self.max_version_limit = options[:limit].to_i
           self.version_condition = options[:if] || true
 
+          if block_given?
+            extension_module_name = "#{self.to_s}#{versioned_class_name}Extension"
+            silence_warnings do
+              Object.const_set(extension_module_name, Module.new(&extension))
+            end
+            
+            options[:extend] = extension_module_name.constantize
+          end
+
           class_eval do
             has_many :versions, 
-              :class_name  => "ActiveRecord::Acts::Versioned::#{versioned_class_name}",
+              :class_name  => "#{self.to_s}::#{versioned_class_name}",
               :foreign_key => "#{versioned_foreign_key}",
               :order       => 'version'
             before_save  :set_new_version
@@ -150,16 +187,19 @@ module ActiveRecord #:nodoc:
                 end
               end
             end
+            
+            include options[:extend] if options[:extend].is_a?(Module)
           end
           
           # create the dynamic versioned model
           # maybe if i sit down long enough i can think up a better way to do this.
           dynamic_model = <<-EOV
-            class ActiveRecord::Acts::Versioned::#{versioned_class_name} < ActiveRecord::Base
+            class #{self.to_s}::#{versioned_class_name} < ActiveRecord::Base
               set_table_name "#{versioned_table_name}"
               belongs_to :#{self.to_s.demodulize.underscore}, :class_name => "#{self.to_s}"
           EOV
           
+          dynamic_model += %Q{include #{options[:extend].to_s}\n} if options[:extend].is_a?(Module)
           dynamic_model += %Q{set_sequence_name "#{version_sequence_name}"\n} if version_sequence_name
           
           eval dynamic_model + 'end'
@@ -355,7 +395,7 @@ module ActiveRecord #:nodoc:
     
           # Returns an instance of the dynamic versioned model
           def versioned_class
-            "ActiveRecord::Acts::Versioned::#{versioned_class_name}".constantize
+            "#{self.to_s}::#{versioned_class_name}".constantize
           end
           
           # An array of fields that are not saved in the versioned table
@@ -404,4 +444,4 @@ module ActiveRecord #:nodoc:
   end
 end
 
-ActiveRecord::Base.class_eval { include ActiveRecord::Acts::Versioned }
+ActiveRecord::Base.send :include, ActiveRecord::Acts::Versioned
