@@ -3,3 +3,5 @@ welcome:
   title: Welcome to the weblog
   body: Such a lovely day
   version: 24
+  author_id: 1
+  revisor_id: 1

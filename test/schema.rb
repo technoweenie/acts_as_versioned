@@ -4,6 +4,8 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :title, :string, :limit => 255
     t.column :body, :text
     t.column :updated_on, :datetime
+    t.column :author_id, :integer
+    t.column :revisor_id, :integer
   end
 
   create_table :page_versions, :force => true do |t|
@@ -12,6 +14,13 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :title, :string, :limit => 255
     t.column :body, :text
     t.column :updated_on, :datetime
+    t.column :author_id, :integer
+    t.column :revisor_id, :integer
+  end
+  
+  create_table :authors, :force => true do |t|
+    t.column :page_id, :integer
+    t.column :name, :string
   end
   
   create_table :locked_pages, :force => true do |t|

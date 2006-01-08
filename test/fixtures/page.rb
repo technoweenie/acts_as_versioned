@@ -1,8 +1,14 @@
 class Page < ActiveRecord::Base
+  belongs_to :author
+  has_many   :authors,  :through => :versions
+  belongs_to :revisor,  :class_name => 'Author'
+  has_many   :revisors, :class_name => 'Author', :through => :versions
   acts_as_versioned :if => :feeling_good? do
     def self.included(base)
       base.cattr_accessor :feeling_good
       base.feeling_good = true
+      base.belongs_to :author
+      base.belongs_to :revisor, :class_name => 'Author'
     end
     
     def feeling_good?
@@ -30,4 +36,8 @@ class LockedPage < ActiveRecord::Base
 end
 
 class SpecialLockedPage < LockedPage
+end
+
+class Author < ActiveRecord::Base
+  has_many :pages
 end
