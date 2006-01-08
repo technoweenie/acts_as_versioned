@@ -196,7 +196,7 @@ module ActiveRecord #:nodoc:
           dynamic_model = <<-EOV
             class #{self.to_s}::#{versioned_class_name} < ActiveRecord::Base
               set_table_name "#{versioned_table_name}"
-              belongs_to :#{self.to_s.demodulize.underscore}, :class_name => "#{self.to_s}"
+              belongs_to :#{self.to_s.demodulize.underscore}, :class_name => "#{self.to_s}", :foreign_key => "#{versioned_foreign_key}"
           EOV
           
           dynamic_model += %Q{include #{options[:extend].to_s}\n} if options[:extend].is_a?(Module)

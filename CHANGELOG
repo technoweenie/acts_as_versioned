@@ -1,7 +1,12 @@
+*0.3.1*
+
+* (7 Jan 2006) explicitly set :foreign_key option for the versioned model's belongs_to assocation for STI [Caged]
+* (7 Jan 2006) added tests to prove has_many :through joins work
+
 *0.3*
 
-* (2 Jan 2005) added ability to share a mixin with versioned class
-* (2 Jan 2005) changed the dynamic version model to MyModel::Version
+* (2 Jan 2006) added ability to share a mixin with versioned class
+* (2 Jan 2006) changed the dynamic version model to MyModel::Version
 
 *0.2.4*
 
