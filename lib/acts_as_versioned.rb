@@ -142,21 +142,19 @@ module ActiveRecord #:nodoc:
           # don't allow multiple calls
           return if self.included_modules.include?(ActiveRecord::Acts::Versioned::ActMethods)
 
-          class_eval do
-            include ActiveRecord::Acts::Versioned::ActMethods
-            cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
-              :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name
-            attr_accessor :changed_attributes
-          end
+          send :include, ActiveRecord::Acts::Versioned::ActMethods
+          cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
+            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name
+          send :attr_accessor, :changed_attributes
           
-          self.versioned_class_name = options[:class_name] || "Version"
-          self.versioned_foreign_key = options[:foreign_key] || self.to_s.foreign_key
-          self.versioned_table_name = options[:table_name] || "#{table_name_prefix}#{Inflector.underscore(Inflector.demodulize(class_name_of_active_record_descendant(self)))}_versions#{table_name_suffix}"            
+          self.versioned_class_name         = options[:class_name]  || "Version"
+          self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
+          self.versioned_table_name         = options[:table_name]  || "#{table_name_prefix}#{Inflector.underscore(Inflector.demodulize(class_name_of_active_record_descendant(self)))}_versions#{table_name_suffix}"            
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
-          self.version_column = options[:version_column] || 'version'
-          self.version_sequence_name = options[:sequence_name]
-          self.max_version_limit = options[:limit].to_i
-          self.version_condition = options[:if] || true
+          self.version_column               = options[:version_column]     || 'version'
+          self.version_sequence_name        = options[:sequence_name]
+          self.max_version_limit            = options[:limit].to_i
+          self.version_condition            = options[:if] || true
 
           if block_given?
             extension_module_name = "#{self.to_s}#{versioned_class_name}Extension"
@@ -190,19 +188,18 @@ module ActiveRecord #:nodoc:
             
             include options[:extend] if options[:extend].is_a?(Module)
           end
-          
+
           # create the dynamic versioned model
-          # maybe if i sit down long enough i can think up a better way to do this.
-          dynamic_model = <<-EOV
-            class #{self.to_s}::#{versioned_class_name} < ActiveRecord::Base
-              set_table_name "#{versioned_table_name}"
-              belongs_to :#{self.to_s.demodulize.underscore}, :class_name => "#{self.to_s}", :foreign_key => "#{versioned_foreign_key}"
-          EOV
+          const_set(versioned_class_name, Class.new(ActiveRecord::Base)).class_eval do
+            def self.reloadable? ; false ; end
+          end
           
-          dynamic_model += %Q{include #{options[:extend].to_s}\n} if options[:extend].is_a?(Module)
-          dynamic_model += %Q{set_sequence_name "#{version_sequence_name}"\n} if version_sequence_name
-          
-          eval dynamic_model + 'end'
+          versioned_class.set_table_name versioned_table_name
+          versioned_class.belongs_to self.to_s.demodulize.underscore.to_sym, 
+            :class_name  => "Item::#{versioned_class_name}", 
+            :foreign_key => versioned_foreign_key
+          versioned_class.send :include, options[:extend]         if options[:extend].is_a?(Module)
+          versioned_class.set_sequence_name version_sequence_name if version_sequence_name
         end
       end
     
