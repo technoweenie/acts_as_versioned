@@ -1,8 +1,8 @@
 class Page < ActiveRecord::Base
   belongs_to :author
-  has_many   :authors,  :through => :versions
+  has_many   :authors,  :through => :versions, :order => 'name'
   belongs_to :revisor,  :class_name => 'Author'
-  has_many   :revisors, :class_name => 'Author', :through => :versions
+  has_many   :revisors, :class_name => 'Author', :through => :versions, :order => 'name'
   acts_as_versioned :if => :feeling_good? do
     def self.included(base)
       base.cattr_accessor :feeling_good
