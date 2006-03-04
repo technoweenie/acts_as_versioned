@@ -138,15 +138,30 @@ module ActiveRecord #:nodoc:
         #     end
         #   end
         # 
+        # == Changing What Fields Are Versioned
+        #
+        # By default, acts_as_versioned will version all but these fields: 
+        # 
+        #   [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
+        #
+        # You can add or change those by modifying #non_versioned_fields
+        #
+        #   class Post < ActiveRecord::Base
+        #     acts_as_versioned
+        #     self.non_versioned_fields << 'comments_count'
+        #   end
+        # 
         def acts_as_versioned(options = {}, &extension)
           # don't allow multiple calls
           return if self.included_modules.include?(ActiveRecord::Acts::Versioned::ActMethods)
 
           send :include, ActiveRecord::Acts::Versioned::ActMethods
-          cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
-            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name
-          send :attr_accessor, :changed_attributes
           
+          cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
+            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name, :non_versioned_fields
+          
+          send :attr_accessor, :changed_attributes
+
           self.versioned_class_name         = options[:class_name]  || "Version"
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
           self.versioned_table_name         = options[:table_name]  || "#{table_name_prefix}#{Inflector.underscore(Inflector.demodulize(class_name_of_active_record_descendant(self)))}_versions#{table_name_suffix}"            
@@ -155,6 +170,7 @@ module ActiveRecord #:nodoc:
           self.version_sequence_name        = options[:sequence_name]
           self.max_version_limit            = options[:limit].to_i
           self.version_condition            = options[:if] || true
+          self.non_versioned_fields         = [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
 
           if block_given?
             extension_module_name = "#{self.to_s}#{versioned_class_name}Extension"
@@ -384,7 +400,7 @@ module ActiveRecord #:nodoc:
               :conditions => ["#{versioned_foreign_key} = ?", id],
               :order      => 'version' }.merge(options)
           end
-        
+
           # Returns an array of columns that are versioned.  See non_versioned_fields
           def versioned_columns
             self.columns.select { |c| !non_versioned_fields.include?(c.name) }
@@ -394,12 +410,7 @@ module ActiveRecord #:nodoc:
           def versioned_class
             "#{self.to_s}::#{versioned_class_name}".constantize
           end
-          
-          # An array of fields that are not saved in the versioned table
-          def non_versioned_fields
-            [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
-          end
-          
+
           # Rake migration task to create the versioned table using options passed to acts_as_versioned
           def create_versioned_table(create_table_options = {})
             # create version column in main table if it does not exist
