@@ -164,7 +164,7 @@ module ActiveRecord #:nodoc:
 
           self.versioned_class_name         = options[:class_name]  || "Version"
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
-          self.versioned_table_name         = options[:table_name]  || "#{table_name_prefix}#{Inflector.underscore(Inflector.demodulize(class_name_of_active_record_descendant(self)))}_versions#{table_name_suffix}"            
+          self.versioned_table_name         = options[:table_name]  || "#{table_name_prefix}#{base_class.name.demodulize.underscore}_versions#{table_name_suffix}"
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
           self.version_column               = options[:version_column]     || 'version'
           self.version_sequence_name        = options[:sequence_name]
@@ -173,12 +173,12 @@ module ActiveRecord #:nodoc:
           self.non_versioned_fields         = [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
 
           if block_given?
-            extension_module_name = "#{self.to_s}#{versioned_class_name}Extension"
+            extension_module_name = "#{versioned_class_name}Extension"
             silence_warnings do
-              Object.const_set(extension_module_name, Module.new(&extension))
+              self.const_set(extension_module_name, Module.new(&extension))
             end
             
-            options[:extend] = extension_module_name.constantize
+            options[:extend] = self.const_get(extension_module_name)
           end
 
           class_eval do
@@ -212,7 +212,7 @@ module ActiveRecord #:nodoc:
           
           versioned_class.set_table_name versioned_table_name
           versioned_class.belongs_to self.to_s.demodulize.underscore.to_sym, 
-            :class_name  => "Item::#{versioned_class_name}", 
+            :class_name  => "#{self.to_s}::#{versioned_class_name}", 
             :foreign_key => versioned_foreign_key
           versioned_class.send :include, options[:extend]         if options[:extend].is_a?(Module)
           versioned_class.set_sequence_name version_sequence_name if version_sequence_name
