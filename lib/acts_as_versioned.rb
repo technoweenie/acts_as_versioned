@@ -408,7 +408,7 @@ module ActiveRecord #:nodoc:
     
           # Returns an instance of the dynamic versioned model
           def versioned_class
-            "#{self.to_s}::#{versioned_class_name}".constantize
+            const_get versioned_class_name
           end
 
           # Rake migration task to create the versioned table using options passed to acts_as_versioned
