@@ -144,11 +144,11 @@ module ActiveRecord #:nodoc:
         # 
         #   [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
         #
-        # You can add or change those by modifying #non_versioned_fields
+        # You can add or change those by modifying #non_versioned_columns.  Note that this takes strings and not symbols.
         #
         #   class Post < ActiveRecord::Base
         #     acts_as_versioned
-        #     self.non_versioned_fields << 'comments_count'
+        #     self.non_versioned_columns << 'comments_count'
         #   end
         # 
         def acts_as_versioned(options = {}, &extension)
@@ -158,8 +158,17 @@ module ActiveRecord #:nodoc:
           send :include, ActiveRecord::Acts::Versioned::ActMethods
           
           cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
-            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name, :non_versioned_fields
-          
+            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name, :non_versioned_columns
+            
+          # legacy
+          alias_method :non_versioned_fields,  :non_versioned_columns
+          alias_method :non_versioned_fields=, :non_versioned_columns=
+
+          class << self
+            alias_method :non_versioned_fields,  :non_versioned_columns
+            alias_method :non_versioned_fields=, :non_versioned_columns=
+          end
+
           send :attr_accessor, :changed_attributes
 
           self.versioned_class_name         = options[:class_name]  || "Version"
@@ -170,7 +179,7 @@ module ActiveRecord #:nodoc:
           self.version_sequence_name        = options[:sequence_name]
           self.max_version_limit            = options[:limit].to_i
           self.version_condition            = options[:if] || true
-          self.non_versioned_fields         = [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
+          self.non_versioned_columns        = [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
 
           if block_given?
             extension_module_name = "#{versioned_class_name}Extension"
@@ -290,17 +299,17 @@ module ActiveRecord #:nodoc:
           save_result
         end
       
-        # Returns an array of attribute keys that are versioned.  See non_versioned_fields
+        # Returns an array of attribute keys that are versioned.  See non_versioned_columns
         def versioned_attributes
-          self.attributes.keys.select { |k| !self.class.non_versioned_fields.include?(k) }
+          self.attributes.keys.select { |k| !self.class.non_versioned_columns.include?(k) }
         end
         
         # If called with no parameters, gets whether the current model has changed and needs to be versioned.
         # If called with a single parameter, gets whether the parameter has changed.
         def changed?(attr_name = nil)
           attr_name.nil? ?
-            (!self.class.track_changed_attributes or (changed_attributes and changed_attributes.length > 0)) :
-            (changed_attributes and changed_attributes.include?(attr_name.to_s))
+            (!self.class.track_changed_attributes || (changed_attributes && changed_attributes.length > 0)) :
+            (changed_attributes && changed_attributes.include?(attr_name.to_s))
         end
         
         # keep old dirty? method
@@ -321,7 +330,7 @@ module ActiveRecord #:nodoc:
         
         # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>changed?</tt>.
         def save_version?
-          version_condition_met? and changed?
+          version_condition_met? && changed?
         end
         
         # Checks condition set in the :if option to check whether a revision should be created or not.  Override this for
@@ -401,9 +410,9 @@ module ActiveRecord #:nodoc:
               :order      => 'version' }.merge(options)
           end
 
-          # Returns an array of columns that are versioned.  See non_versioned_fields
+          # Returns an array of columns that are versioned.  See non_versioned_columns
           def versioned_columns
-            self.columns.select { |c| !non_versioned_fields.include?(c.name) }
+            self.columns.select { |c| !non_versioned_columns.include?(c.name) }
           end
     
           # Returns an instance of the dynamic versioned model
@@ -425,7 +434,7 @@ module ActiveRecord #:nodoc:
             
             updated_col = nil
             self.versioned_columns.each do |col| 
-              updated_col = col if !updated_col and %(updated_at updated_on).include?(col.name)
+              updated_col = col if !updated_col && %(updated_at updated_on).include?(col.name)
               self.connection.add_column versioned_table_name, col.name, col.type, 
                 :limit => col.limit, 
                 :default => col.default

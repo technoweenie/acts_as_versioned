@@ -39,6 +39,7 @@ ActiveRecord::Schema.define(:version => 0) do
 
   create_table :widgets, :force => true do |t|
     t.column :name, :string, :limit => 50
+    t.column :foo, :string
     t.column :version, :integer
     t.column :updated_at, :datetime
   end

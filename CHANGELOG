@@ -1,3 +1,8 @@
+*0.4*
+
+* (28 March 2006) Rename non_versioned_fields to non_versioned_columns (old one is kept for compatibility).
+* (28 March 2006) Made explicit documentation note that string column names are required for non_versioned_columns.
+
 *0.3.1*
 
 * (7 Jan 2006) explicitly set :foreign_key option for the versioned model's belongs_to assocation for STI [Caged]
