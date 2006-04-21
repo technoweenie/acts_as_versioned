@@ -51,6 +51,7 @@ module ActiveRecord #:nodoc:
     #
     # See ActiveRecord::Acts::Versioned::ClassMethods#acts_as_versioned for configuration options
     module Versioned
+      CALLBACKS = [:set_new_version, :save_version_on_create, :save_version, :clear_changed_attributes]
       def self.included(base) # :nodoc:
         base.extend ClassMethods
       end
@@ -290,13 +291,11 @@ module ActiveRecord #:nodoc:
 
         # Temporarily turns off Optimistic Locking while saving.  Used when reverting so that a new version is not created.
         def save_without_revision
-          old_lock_value = ActiveRecord::Base.lock_optimistically
-          ActiveRecord::Base.lock_optimistically = false if old_lock_value
-          disable_acts_as_versioned_callbacks
-          save_result = self.save
-          enable_acts_as_versioned_callbacks
-          ActiveRecord::Base.lock_optimistically = true if old_lock_value
-          save_result
+          without_locking do
+            without_revision do
+              save
+            end
+          end
         end
       
         # Returns an array of attribute keys that are versioned.  See non_versioned_columns
@@ -346,54 +345,54 @@ module ActiveRecord #:nodoc:
           end          
         end
 
-        protected
-        # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
-        def set_new_version
-          self.send("#{self.class.version_column}=", self.next_version) if new_record? or (!locking_enabled? and save_version?)
-        end
-        
-        # Gets the next available version for the current record, or 1 for a new record
-        def next_version
-          return 1 if new_record?
-          connection.select_one("SELECT MAX(version)+1 AS next_version FROM #{self.class.versioned_table_name} WHERE #{self.class.versioned_foreign_key} = #{self.id}")['next_version'] || 1
-        end
-        
-        # clears current changed attributes.  Called after save.
-        def clear_changed_attributes
-          self.changed_attributes = []
+        # Executes the block with the versioning callbacks disabled.
+        #
+        #   @foo.without_revision do
+        #     @foo.save
+        #   end
+        #
+        def without_revision(&block)
+          self.class.without_revision(&block)
         end
 
-        def write_changed_attribute(attr_name, attr_value)
-          (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) or self.send(attr_name) == attr_value
-          write_attribute(attr_name.to_s, attr_value)
+        # Turns off optimistic locking for the duration of the block
+        #
+        #   @foo.without_locking do
+        #     @foo.save
+        #   end
+        #
+        def without_locking(&block)
+          self.class.without_locking(&block)
         end
+
+        protected          
+          # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
+          def set_new_version
+            self.send("#{self.class.version_column}=", self.next_version) if new_record? || (!locking_enabled? && save_version?)
+          end
+          
+          # Gets the next available version for the current record, or 1 for a new record
+          def next_version
+            return 1 if new_record?
+            connection.select_one("SELECT MAX(version)+1 AS next_version FROM #{self.class.versioned_table_name} WHERE #{self.class.versioned_foreign_key} = #{self.id}")['next_version'] || 1
+          end
+          
+          # clears current changed attributes.  Called after save.
+          def clear_changed_attributes
+            self.changed_attributes = []
+          end
+          
+          def write_changed_attribute(attr_name, attr_value)
+            (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) or self.send(attr_name) == attr_value
+            write_attribute(attr_name.to_s, attr_value)
+          end
 
         private
-        unless defined?(ACTS_AS_VERSIONED_CALLBACKS)
-          ACTS_AS_VERSIONED_CALLBACKS =  [:set_new_version, :save_version_on_create, :save_version, :clear_changed_attributes]
-        end
-
-        ACTS_AS_VERSIONED_CALLBACKS.each do |attr_name| 
-          alias_method "orig_#{attr_name}".to_sym, attr_name
-        end
-        
-        def empty_callback() end #:nodoc:
-
-        def enable_acts_as_versioned_callbacks
-          self.class.class_eval do 
-            ACTS_AS_VERSIONED_CALLBACKS.each do |attr_name|
-              alias_method attr_name, "orig_#{attr_name}".to_sym
-            end
+          CALLBACKS.each do |attr_name| 
+            alias_method "orig_#{attr_name}".to_sym, attr_name
           end
-        end
-
-        def disable_acts_as_versioned_callbacks
-          self.class.class_eval do 
-            ACTS_AS_VERSIONED_CALLBACKS.each do |attr_name| 
-              alias_method attr_name, :empty_callback
-            end
-          end
-        end
+          
+          def empty_callback() end #:nodoc:
 
         module ClassMethods
           # Finds a specific version of a specific row of this model
@@ -455,6 +454,41 @@ module ActiveRecord #:nodoc:
           def drop_versioned_table
             self.connection.drop_table versioned_table_name
           end
+          
+          # Executes the block with the versioning callbacks disabled.
+          #
+          #   Foo.without_revision do
+          #     @foo.save
+          #   end
+          #
+          def without_revision(&block)
+            class_eval do 
+              CALLBACKS.each do |attr_name| 
+                alias_method attr_name, :empty_callback
+              end
+            end
+            result = block.call
+            class_eval do 
+              CALLBACKS.each do |attr_name|
+                alias_method attr_name, "orig_#{attr_name}".to_sym
+              end
+            end
+            result
+          end
+
+          # Turns off optimistic locking for the duration of the block
+          #
+          #   Foo.without_locking do
+          #     @foo.save
+          #   end
+          #
+          def without_locking(&block)
+            current = ActiveRecord::Base.lock_optimistically
+            ActiveRecord::Base.lock_optimistically = false if current
+            result = block.call
+            ActiveRecord::Base.lock_optimistically = true if current
+            result
+          end          
         end
       end
     end

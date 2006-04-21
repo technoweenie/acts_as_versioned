@@ -1,3 +1,11 @@
+*0.5* # do versions even matter for plugins?
+
+* (21 Apr 2006) Added without_locking and without_revision methods.
+
+  Foo.without_revision do
+    @foo.update_attributes ...
+  end
+
 *0.4*
 
 * (28 March 2006) Rename non_versioned_fields to non_versioned_columns (old one is kept for compatibility).

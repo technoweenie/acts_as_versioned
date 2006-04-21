@@ -13,6 +13,19 @@ class VersionedTest < Test::Unit::TestCase
     assert_instance_of Page.versioned_class, p.versions.first
   end
 
+  def test_saves_without_revision
+    p = pages(:welcome)
+    old_versions = p.versions.count
+    
+    p.save_without_revision
+    
+    p.without_revision do
+      p.update_attributes :title => 'changed'
+    end
+    
+    assert_equal old_versions, p.versions.count
+  end
+
   def test_rollback_with_version_number
     p = pages(:welcome)
     assert_equal 24, p.version
