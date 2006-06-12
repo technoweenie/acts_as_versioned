@@ -195,7 +195,7 @@ module ActiveRecord #:nodoc:
             has_many :versions, 
               :class_name  => "#{self.to_s}::#{versioned_class_name}",
               :foreign_key => "#{versioned_foreign_key}",
-              :order       => 'version'
+              :order       => 'version', :dependent => :delete_all
             before_save  :set_new_version
             after_create :save_version_on_create
             after_update :save_version

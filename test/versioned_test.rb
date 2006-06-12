@@ -268,4 +268,10 @@ class VersionedTest < Test::Unit::TestCase
   def test_has_many_through_with_custom_association
     assert_equal [authors(:caged), authors(:mly)], pages(:welcome).revisors
   end
+  
+  def test_referential_integrity
+    pages(:welcome).destroy
+    assert_equal 0, Page.count
+    assert_equal 0, Page::Version.count
+  end
 end
