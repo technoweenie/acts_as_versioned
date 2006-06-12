@@ -374,7 +374,7 @@ module ActiveRecord #:nodoc:
           # Gets the next available version for the current record, or 1 for a new record
           def next_version
             return 1 if new_record?
-            connection.select_one("SELECT MAX(version)+1 AS next_version FROM #{self.class.versioned_table_name} WHERE #{self.class.versioned_foreign_key} = #{self.id}")['next_version'] || 1
+            (versions.calculate(:max, :version) || 0) + 1
           end
           
           # clears current changed attributes.  Called after save.
