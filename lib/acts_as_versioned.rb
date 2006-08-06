@@ -291,13 +291,20 @@ module ActiveRecord #:nodoc:
 
         # Temporarily turns off Optimistic Locking while saving.  Used when reverting so that a new version is not created.
         def save_without_revision
+          save_without_revision!
+          true
+        rescue
+          false
+        end
+
+        def save_without_revision!
           without_locking do
             without_revision do
-              save
+              save!
             end
           end
         end
-      
+
         # Returns an array of attribute keys that are versioned.  See non_versioned_columns
         def versioned_attributes
           self.attributes.keys.select { |k| !self.class.non_versioned_columns.include?(k) }
