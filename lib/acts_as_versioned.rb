@@ -222,7 +222,7 @@ module ActiveRecord #:nodoc:
           
           versioned_class.set_table_name versioned_table_name
           versioned_class.belongs_to self.to_s.demodulize.underscore.to_sym, 
-            :class_name  => "#{self.to_s}::#{versioned_class_name}", 
+            :class_name  => "::#{self.to_s}", 
             :foreign_key => versioned_foreign_key
           versioned_class.send :include, options[:extend]         if options[:extend].is_a?(Module)
           versioned_class.set_sequence_name version_sequence_name if version_sequence_name

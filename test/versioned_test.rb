@@ -274,4 +274,10 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 0, Page.count
     assert_equal 0, Page::Version.count
   end
+
+  def test_versioned_records_should_belong_to_parent
+    page = pages(:welcome)
+    page_version = page.versions.last
+    assert_equal page, page_version.page
+  end
 end
