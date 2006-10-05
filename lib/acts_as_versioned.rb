@@ -159,7 +159,8 @@ module ActiveRecord #:nodoc:
           send :include, ActiveRecord::Acts::Versioned::ActMethods
           
           cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
-            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name, :non_versioned_columns
+            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name, :non_versioned_columns,
+            :version_association_options
             
           # legacy
           alias_method :non_versioned_fields,  :non_versioned_columns
@@ -181,6 +182,12 @@ module ActiveRecord #:nodoc:
           self.max_version_limit            = options[:limit].to_i
           self.version_condition            = options[:if] || true
           self.non_versioned_columns        = [self.primary_key, inheritance_column, 'version', 'lock_version', versioned_inheritance_column]
+          self.version_association_options  = {
+                                                :class_name  => "#{self.to_s}::#{versioned_class_name}",
+                                                :foreign_key => "#{versioned_foreign_key}",
+                                                :order       => 'version',
+                                                :dependent   => :delete_all
+                                              }.merge(options[:association_options] || {})
 
           if block_given?
             extension_module_name = "#{versioned_class_name}Extension"
@@ -192,10 +199,7 @@ module ActiveRecord #:nodoc:
           end
 
           class_eval do
-            has_many :versions, 
-              :class_name  => "#{self.to_s}::#{versioned_class_name}",
-              :foreign_key => "#{versioned_foreign_key}",
-              :order       => 'version', :dependent => :delete_all
+            has_many :versions, version_association_options
             before_save  :set_new_version
             after_create :save_version_on_create
             after_update :save_version

@@ -274,6 +274,26 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 0, Page.count
     assert_equal 0, Page::Version.count
   end
+  
+  def test_association_options
+    association = Page.reflect_on_association(:versions)
+    options = association.options
+    assert_equal :delete_all, options[:dependent]
+    assert_equal 'version', options[:order]
+    
+    association = Widget.reflect_on_association(:versions)
+    options = association.options
+    assert_nil options[:dependent]
+    assert_equal 'version desc', options[:order]
+    assert_equal 'widget_id', options[:foreign_key]
+    
+    widget = Widget.create :name => 'new widget'
+    assert_equal 1, Widget.count
+    assert_equal 1, Widget.versioned_class.count
+    widget.destroy
+    assert_equal 0, Widget.count
+    assert_equal 1, Widget.versioned_class.count
+  end
 
   def test_versioned_records_should_belong_to_parent
     page = pages(:welcome)

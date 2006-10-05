@@ -1,3 +1,7 @@
+*SVN* (version numbers are overrated)
+
+* (5 Oct 2006) Allow customization of #versions association options [Dan Peterson]
+
 *0.5.1*
 
 * (8 Aug 2006) Versioned models now belong to the unversioned model.  @article_version.article.class => Article [Aslak Hellesoy]
