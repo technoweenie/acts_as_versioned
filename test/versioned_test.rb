@@ -3,7 +3,7 @@ require File.join(File.dirname(__FILE__), 'fixtures/page')
 require File.join(File.dirname(__FILE__), 'fixtures/widget')
 
 class VersionedTest < Test::Unit::TestCase
-  fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions, :authors
+  fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions, :authors, :landmarks, :landmark_versions
 
   def test_saves_versioned_copy
     p = Page.create :title => 'first title', :body => 'first body'
@@ -299,5 +299,15 @@ class VersionedTest < Test::Unit::TestCase
     page = pages(:welcome)
     page_version = page.versions.last
     assert_equal page, page_version.page
+  end
+  
+  def test_unchanged_attributes
+    landmarks(:washington).attributes = landmarks(:washington).attributes
+    assert !landmarks(:washington).changed?
+  end
+  
+  def test_unchanged_string_attributes
+    landmarks(:washington).attributes = landmarks(:washington).attributes.inject({}) { |params, (key, value)| params.update key => value.to_s }
+    assert !landmarks(:washington).changed?
   end
 end

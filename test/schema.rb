@@ -50,4 +50,19 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :version, :integer
     t.column :updated_at, :datetime
   end
+  
+  create_table :landmarks, :force => true do |t|
+    t.column :name, :string
+    t.column :latitude, :float
+    t.column :longitude, :float
+    t.column :version, :integer
+  end
+
+  create_table :landmark_versions, :force => true do |t|
+    t.column :landmark_id, :integer
+    t.column :name, :string
+    t.column :latitude, :float
+    t.column :longitude, :float
+    t.column :version, :integer
+  end
 end

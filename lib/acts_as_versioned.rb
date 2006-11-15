@@ -392,10 +392,12 @@ module ActiveRecord #:nodoc:
           def clear_changed_attributes
             self.changed_attributes = []
           end
-          
+
           def write_changed_attribute(attr_name, attr_value)
-            (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) or self.send(attr_name) == attr_value
-            write_attribute(attr_name.to_s, attr_value)
+            # Convert to db type for comparison. Avoids failing Float<=>String comparisons.
+            attr_value_for_db = self.class.columns_hash[attr_name.to_s].type_cast(attr_value)
+            (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) || self.send(attr_name) == attr_value_for_db
+            write_attribute(attr_name, attr_value_for_db)
           end
 
         private
