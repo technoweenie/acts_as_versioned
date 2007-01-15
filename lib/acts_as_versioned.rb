@@ -51,7 +51,7 @@ module ActiveRecord #:nodoc:
     #
     # See ActiveRecord::Acts::Versioned::ClassMethods#acts_as_versioned for configuration options
     module Versioned
-      CALLBACKS = [:set_new_version, :save_version_on_create, :save_version, :clear_changed_attributes]
+      CALLBACKS = [:set_new_version, :save_version_on_create, :save_version?, :clear_changed_attributes]
       def self.included(base) # :nodoc:
         base.extend ClassMethods
       end
