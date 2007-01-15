@@ -376,6 +376,8 @@ module ActiveRecord #:nodoc:
           self.class.without_locking(&block)
         end
 
+        def empty_callback() end #:nodoc:
+
         protected          
           # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
           def set_new_version
@@ -404,8 +406,6 @@ module ActiveRecord #:nodoc:
           CALLBACKS.each do |attr_name| 
             alias_method "orig_#{attr_name}".to_sym, attr_name
           end
-          
-          def empty_callback() end #:nodoc:
 
         module ClassMethods
           # Finds a specific version of a specific row of this model
