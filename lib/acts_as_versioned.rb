@@ -402,11 +402,6 @@ module ActiveRecord #:nodoc:
             write_attribute(attr_name, attr_value_for_db)
           end
 
-        private
-          CALLBACKS.each do |attr_name| 
-            alias_method "orig_#{attr_name}".to_sym, attr_name
-          end
-
         module ClassMethods
           # Finds a specific version of a specific row of this model
           def find_version(id, version)
@@ -476,17 +471,18 @@ module ActiveRecord #:nodoc:
           #
           def without_revision(&block)
             class_eval do 
-              CALLBACKS.each do |attr_name| 
+              CALLBACKS.each do |attr_name|
+                alias_method "orig_#{attr_name}".to_sym, attr_name
                 alias_method attr_name, :empty_callback
               end
             end
-            result = block.call
+            block.call
+          ensure
             class_eval do 
               CALLBACKS.each do |attr_name|
                 alias_method attr_name, "orig_#{attr_name}".to_sym
               end
             end
-            result
           end
 
           # Turns off optimistic locking for the duration of the block
