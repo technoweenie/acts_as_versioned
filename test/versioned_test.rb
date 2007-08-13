@@ -4,6 +4,7 @@ require File.join(File.dirname(__FILE__), 'fixtures/widget')
 
 class VersionedTest < Test::Unit::TestCase
   fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions, :authors, :landmarks, :landmark_versions
+  set_fixture_class :page_versions => Page::Version
 
   def test_saves_versioned_copy
     p = Page.create! :title => 'first title', :body => 'first body'
@@ -209,8 +210,6 @@ class VersionedTest < Test::Unit::TestCase
   def test_version_order
     assert_equal 23, pages(:welcome).versions.first.version
     assert_equal 24, pages(:welcome).versions.last.version
-    assert_equal 23, pages(:welcome).find_versions.first.version
-    assert_equal 24, pages(:welcome).find_versions.last.version
   end
   
   def test_track_changed_attributes    
@@ -246,10 +245,10 @@ class VersionedTest < Test::Unit::TestCase
   
   def test_find_versions
     assert_equal 2, locked_pages(:welcome).versions.size
-    assert_equal 1, locked_pages(:welcome).find_versions(:conditions => ['title LIKE ?', '%weblog%']).length
-    assert_equal 2, locked_pages(:welcome).find_versions(:conditions => ['title LIKE ?', '%web%']).length
-    assert_equal 0, locked_pages(:thinking).find_versions(:conditions => ['title LIKE ?', '%web%']).length
-    assert_equal 2, locked_pages(:welcome).find_versions.length
+    assert_equal 1, locked_pages(:welcome).versions.find(:all, :conditions => ['title LIKE ?', '%weblog%']).length
+    assert_equal 2, locked_pages(:welcome).versions.find(:all, :conditions => ['title LIKE ?', '%web%']).length
+    assert_equal 0, locked_pages(:thinking).versions.find(:all, :conditions => ['title LIKE ?', '%web%']).length
+    assert_equal 2, locked_pages(:welcome).versions.length
   end
   
   def test_with_sequence
@@ -307,5 +306,23 @@ class VersionedTest < Test::Unit::TestCase
   def test_unchanged_string_attributes
     landmarks(:washington).attributes = landmarks(:washington).attributes.inject({}) { |params, (key, value)| params.update key => value.to_s }
     assert !landmarks(:washington).changed?
+  end
+
+  def test_should_find_earliest_version
+    assert_equal page_versions(:welcome_1), pages(:welcome).versions.earliest
+  end
+  
+  def test_should_find_latest_version
+    assert_equal page_versions(:welcome_2), pages(:welcome).versions.latest
+  end
+  
+  def test_should_find_previous_version
+    assert_equal page_versions(:welcome_1), page_versions(:welcome_2).previous
+    assert_equal page_versions(:welcome_1), pages(:welcome).versions.before(page_versions(:welcome_2))
+  end
+  
+  def test_should_find_next_version
+    assert_equal page_versions(:welcome_2), page_versions(:welcome_1).next
+    assert_equal page_versions(:welcome_2), pages(:welcome).versions.after(page_versions(:welcome_1))
   end
 end
