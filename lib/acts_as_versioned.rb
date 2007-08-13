@@ -270,7 +270,6 @@ module ActiveRecord #:nodoc:
           
           versioned_class.cattr_accessor :original_class
           versioned_class.original_class = self
-          puts versioned_class.original_class.inspect
           versioned_class.set_table_name versioned_table_name
           versioned_class.belongs_to self.to_s.demodulize.underscore.to_sym, 
             :class_name  => "::#{self.to_s}", 
