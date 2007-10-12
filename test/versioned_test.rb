@@ -280,7 +280,7 @@ class VersionedTest < Test::Unit::TestCase
     
     association = Widget.reflect_on_association(:versions)
     options = association.options
-    assert_nil options[:dependent]
+    assert_equal :nullify, options[:dependent]
     assert_equal 'version desc', options[:order]
     assert_equal 'widget_id', options[:foreign_key]
     
@@ -299,12 +299,12 @@ class VersionedTest < Test::Unit::TestCase
   end
   
   def test_unchanged_attributes
-    landmarks(:washington).attributes = landmarks(:washington).attributes
+    landmarks(:washington).attributes = landmarks(:washington).attributes.except("id")
     assert !landmarks(:washington).changed?
   end
   
   def test_unchanged_string_attributes
-    landmarks(:washington).attributes = landmarks(:washington).attributes.inject({}) { |params, (key, value)| params.update key => value.to_s }
+    landmarks(:washington).attributes = landmarks(:washington).attributes.except("id").inject({}) { |params, (key, value)| params.update(key => value.to_s) }
     assert !landmarks(:washington).changed?
   end
 
