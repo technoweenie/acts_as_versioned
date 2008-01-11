@@ -21,11 +21,13 @@ if ActiveRecord::Base.connection.supports_migrations?
       assert_raises(ActiveRecord::StatementInvalid) { Thing.create :title => 'blah blah' }
       # take 'er up
       ActiveRecord::Migrator.up(File.dirname(__FILE__) + '/fixtures/migrations/')
-      t = Thing.create :title => 'blah blah', :price => 123.45
+      t = Thing.create :title => 'blah blah', :price => 123.45, :type => 'Thing'
       assert_equal 1, t.versions.size
       
       # check that the price column has remembered its value correctly
-      assert_equal 123.45, t.versions.first.price
+      assert_equal t.price,  t.versions.first.price
+      assert_equal t.title,  t.versions.first.title
+      assert_equal t[:type], t.versions.first[:type]
       
       # make sure that the precision of the price column has been preserved
       assert_equal 7, Thing::Version.columns.find{|c| c.name == "price"}.precision
