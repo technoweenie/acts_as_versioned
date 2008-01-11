@@ -2,9 +2,14 @@ $:.unshift(File.dirname(__FILE__) + '/../../../rails/activesupport/lib')
 $:.unshift(File.dirname(__FILE__) + '/../../../rails/activerecord/lib')
 $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'test/unit'
-require 'active_support'
-require 'active_record'
-require 'active_record/fixtures'
+begin
+  require 'active_support'
+  require 'active_record'
+  require 'active_record/fixtures'
+rescue LoadError
+  require 'rubygems'
+  retry
+end
 require 'acts_as_versioned'
 
 config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
