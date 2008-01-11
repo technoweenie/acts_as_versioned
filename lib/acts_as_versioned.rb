@@ -487,8 +487,8 @@ module ActiveRecord #:nodoc:
               self.connection.add_column versioned_table_name, versioned_inheritance_column, type_col.type, 
                 :limit => type_col.limit, 
                 :default => type_col.default,
-                :scale => col.scale,
-                :precision => col.precision
+                :scale => type_col.scale,
+                :precision => type_col.precision
             end
     
             if updated_col.nil?
