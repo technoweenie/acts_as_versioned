@@ -478,13 +478,17 @@ module ActiveRecord #:nodoc:
               updated_col = col if !updated_col && %(updated_at updated_on).include?(col.name)
               self.connection.add_column versioned_table_name, col.name, col.type, 
                 :limit => col.limit, 
-                :default => col.default
+                :default => col.default,
+                :scale => col.scale,
+                :precision => col.precision
             end
         
             if type_col = self.columns_hash[inheritance_column]
               self.connection.add_column versioned_table_name, versioned_inheritance_column, type_col.type, 
                 :limit => type_col.limit, 
-                :default => type_col.default
+                :default => type_col.default,
+                :scale => col.scale,
+                :precision => col.precision
             end
     
             if updated_col.nil?
