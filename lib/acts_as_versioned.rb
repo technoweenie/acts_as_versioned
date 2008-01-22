@@ -22,7 +22,7 @@
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
     # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a 
-    # versioned table ready and that your model has a version field.  This works with optimisic locking if the lock_version
+    # versioned table ready and that your model has a version field.  This works with optimistic locking if the lock_version
     # column is present as well.
     #
     # The class for the versioned model is derived the first time it is seen. Therefore, if you change your database schema you have to restart
