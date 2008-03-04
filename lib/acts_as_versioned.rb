@@ -454,9 +454,14 @@ module ActiveRecord #:nodoc:
           def find_version(id, version = nil)
             return find(id) unless version
 
-            find_versions(id, 
-              :conditions => ["#{versioned_foreign_key} = ? AND version = ?", id, version], 
-              :limit => 1).first
+            conditions = ["#{versioned_foreign_key} = ? AND version = ?", id, version]
+            options = { :conditions => conditions, :limit => 1 }
+
+            if result = find_versions(id, options).first
+              result
+            else
+              raise RecordNotFound, "Couldn't find #{name} with ID=#{id} and VERSION=#{version}"
+            end
           end
 
           # Finds versions of a specific model.  Takes an options hash like <tt>find</tt>
