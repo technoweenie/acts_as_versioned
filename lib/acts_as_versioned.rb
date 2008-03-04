@@ -266,6 +266,10 @@ module ActiveRecord #:nodoc:
             def next
               self.class.after(self)
             end
+
+            def versions_count
+              page.version
+            end
           end
 
           versioned_class.cattr_accessor :original_class
@@ -282,6 +286,11 @@ module ActiveRecord #:nodoc:
       module ActMethods
         def self.included(base) # :nodoc:
           base.extend ClassMethods
+        end
+
+        # Finds a specific version of this record
+        def find_version(version = nil)
+          self.class.find_version(id, version)
         end
 
         # Saves a version of the model if applicable
@@ -307,6 +316,10 @@ module ActiveRecord #:nodoc:
             sql = "DELETE FROM #{self.class.versioned_table_name} WHERE version <= #{excess_baggage} AND #{self.class.versioned_foreign_key} = #{self.id}"
             self.class.versioned_class.connection.execute sql
           end
+        end
+
+        def versions_count
+          version
         end
 
         # Reverts a model to a given version.  Takes either a version number or an instance of the versioned model
@@ -438,7 +451,9 @@ module ActiveRecord #:nodoc:
 
         module ClassMethods
           # Finds a specific version of a specific row of this model
-          def find_version(id, version)
+          def find_version(id, version = nil)
+            return find(id) unless version
+
             find_versions(id, 
               :conditions => ["#{versioned_foreign_key} = ? AND version = ?", id, version], 
               :limit => 1).first
