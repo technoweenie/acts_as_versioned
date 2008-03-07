@@ -251,6 +251,16 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 2, locked_pages(:welcome).versions.length
   end
 
+  def test_find_version
+    assert_equal page_versions(:welcome_1), Page.find_version(pages(:welcome).id, 23)
+    assert_equal page_versions(:welcome_2), Page.find_version(pages(:welcome).id, 24)
+    assert_equal pages(:welcome), Page.find_version(pages(:welcome).id)
+
+    assert_equal page_versions(:welcome_1), pages(:welcome).find_version(23)
+    assert_equal page_versions(:welcome_2), pages(:welcome).find_version(24)
+    assert_equal pages(:welcome), pages(:welcome).find_version
+  end
+
   def test_with_sequence
     assert_equal 'widgets_seq', Widget.versioned_class.sequence_name
     3.times { Widget.create! :name => 'new widget' }
@@ -324,5 +334,11 @@ class VersionedTest < Test::Unit::TestCase
   def test_should_find_next_version
     assert_equal page_versions(:welcome_2), page_versions(:welcome_1).next
     assert_equal page_versions(:welcome_2), pages(:welcome).versions.after(page_versions(:welcome_1))
+  end
+
+  def test_should_find_version_count
+    assert_equal 24, pages(:welcome).versions_count
+    assert_equal 24, page_versions(:welcome_1).versions_count
+    assert_equal 24, page_versions(:welcome_2).versions_count
   end
 end
