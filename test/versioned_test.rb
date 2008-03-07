@@ -259,6 +259,9 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal page_versions(:welcome_1), pages(:welcome).find_version(23)
     assert_equal page_versions(:welcome_2), pages(:welcome).find_version(24)
     assert_equal pages(:welcome), pages(:welcome).find_version
+
+    assert_raise(ActiveRecord::RecordNotFound) { Page.find_version(pages(:welcome).id, 1) }
+    assert_raise(ActiveRecord::RecordNotFound) { Page.find_version(0, 23) }
   end
 
   def test_with_sequence
