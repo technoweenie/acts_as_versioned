@@ -200,7 +200,6 @@ module ActiveRecord #:nodoc:
           self.version_association_options  = {
                                                 :class_name  => "#{self.to_s}::#{versioned_class_name}",
                                                 :foreign_key => versioned_foreign_key,
-                                                :order       => 'version',
                                                 :dependent   => :delete_all
                                               }.merge(options[:association_options] || {})
 
@@ -217,7 +216,7 @@ module ActiveRecord #:nodoc:
             has_many :versions, version_association_options do
               # finds earliest version of this record
               def earliest
-                @earliest ||= find(:first)
+                @earliest ||= find(:first, :order => 'version')
               end
 
               # find latest version of this record
