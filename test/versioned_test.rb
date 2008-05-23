@@ -201,10 +201,10 @@ class VersionedTest < Test::Unit::TestCase
     end
   end
 
-  def test_track_changed_attributes_default_value
-    assert !Page.track_changed_attributes
-    assert LockedPage.track_changed_attributes
-    assert SpecialLockedPage.track_changed_attributes
+  def test_track_altered_attributes_default_value
+    assert !Page.track_altered_attributes
+    assert LockedPage.track_altered_attributes
+    assert SpecialLockedPage.track_altered_attributes
   end
 
   def test_version_order
@@ -212,7 +212,7 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 24, pages(:welcome).versions.last.version
   end
 
-  def test_track_changed_attributes
+  def test_track_altered_attributes
     p = LockedPage.create! :title => "title"
     assert_equal 1, p.lock_version
     assert_equal 1, p.versions(true).size
@@ -311,7 +311,7 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal page, page_version.page
   end
 
-  def test_unchanged_attributes
+  def test_unaltered_attributes
     landmarks(:washington).attributes = landmarks(:washington).attributes.except("id")
     assert !landmarks(:washington).changed?
   end

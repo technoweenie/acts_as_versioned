@@ -66,7 +66,7 @@ module ActiveRecord #:nodoc:
     #
     # See ActiveRecord::Acts::Versioned::ClassMethods#acts_as_versioned for configuration options
     module Versioned
-      CALLBACKS = [:set_new_version, :save_version_on_create, :save_version?, :clear_changed_attributes]
+      CALLBACKS = [:set_new_version, :save_version_on_create, :save_version?, :clear_altered_attributes]
       def self.included(base) # :nodoc:
         base.extend ClassMethods
       end
@@ -174,7 +174,7 @@ module ActiveRecord #:nodoc:
           send :include, ActiveRecord::Acts::Versioned::ActMethods
 
           cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
-            :version_column, :max_version_limit, :track_changed_attributes, :version_condition, :version_sequence_name, :non_versioned_columns,
+            :version_column, :max_version_limit, :track_altered_attributes, :version_condition, :version_sequence_name, :non_versioned_columns,
             :version_association_options
 
           # legacy
@@ -186,7 +186,7 @@ module ActiveRecord #:nodoc:
             alias_method :non_versioned_fields=, :non_versioned_columns=
           end
 
-          send :attr_accessor, :changed_attributes
+          send :attr_accessor, :altered_attributes
 
           self.versioned_class_name         = options[:class_name]  || "Version"
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
@@ -228,10 +228,10 @@ module ActiveRecord #:nodoc:
             after_create :save_version_on_create
             after_update :save_version
             after_save   :clear_old_versions
-            after_save   :clear_changed_attributes
+            after_save   :clear_altered_attributes
 
             unless options[:if_changed].nil?
-              self.track_changed_attributes = true
+              self.track_altered_attributes = true
               options[:if_changed] = [options[:if_changed]] unless options[:if_changed].is_a?(Array)
               options[:if_changed].each do |attr_name|
                 define_method("#{attr_name}=") do |value|
@@ -364,8 +364,8 @@ module ActiveRecord #:nodoc:
         # If called with a single parameter, gets whether the parameter has changed.
         def changed?(attr_name = nil)
           attr_name.nil? ?
-            (!self.class.track_changed_attributes || (changed_attributes && changed_attributes.length > 0)) :
-            (changed_attributes && changed_attributes.include?(attr_name.to_s))
+            (!self.class.track_altered_attributes || (altered_attributes && altered_attributes.length > 0)) :
+            (altered_attributes && altered_attributes.include?(attr_name.to_s))
         end
 
         # keep old dirty? method
@@ -437,14 +437,14 @@ module ActiveRecord #:nodoc:
           end
 
           # clears current changed attributes.  Called after save.
-          def clear_changed_attributes
-            self.changed_attributes = []
+          def clear_altered_attributes
+            self.altered_attributes = []
           end
 
           def write_changed_attribute(attr_name, attr_value)
             # Convert to db type for comparison. Avoids failing Float<=>String comparisons.
             attr_value_for_db = self.class.columns_hash[attr_name.to_s].type_cast(attr_value)
-            (self.changed_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) || self.send(attr_name) == attr_value_for_db
+            (self.altered_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) || self.send(attr_name) == attr_value_for_db
             write_attribute(attr_name, attr_value_for_db)
           end
 
