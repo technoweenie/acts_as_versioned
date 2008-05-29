@@ -184,10 +184,11 @@ class VersionedTest < Test::Unit::TestCase
 
   def test_version_no_limit
     p = Page.create! :title => "title", :body => 'first body'
-    p.save
-    p.save
     5.times do |i|
-      assert_page_title p, i
+      p.title = "title#{i}"
+      p.save
+      assert_equal "title#{i}", p.title
+      assert_equal i+2, p.version
     end
   end
 
@@ -196,7 +197,10 @@ class VersionedTest < Test::Unit::TestCase
     p.update_attributes(:title => "title1")
     p.update_attributes(:title => "title2")
     5.times do |i|
-      assert_page_title p, i, :lock_version
+      p.title = "title#{i}"
+      p.save
+      assert_equal "title#{i}", p.title
+      assert_equal (i+4), p.send(:lock_version)
       assert p.versions(true).size <= 2, "locked version can only store 2 versions"
     end
   end
@@ -234,13 +238,6 @@ class VersionedTest < Test::Unit::TestCase
     p.save
     assert_equal 4, p.lock_version
     assert_equal 2, p.versions(true).size # version 1 deleted
-  end
-
-  def assert_page_title(p, i, version_field = :version)
-    p.title = "title#{i}"
-    p.save
-    assert_equal "title#{i}", p.title
-    assert_equal (i+4), p.send(version_field)
   end
 
   def test_find_versions
