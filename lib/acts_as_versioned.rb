@@ -66,7 +66,7 @@ module ActiveRecord #:nodoc:
     #
     # See ActiveRecord::Acts::Versioned::ClassMethods#acts_as_versioned for configuration options
     module Versioned
-      CALLBACKS = [:set_new_version, :save_version_on_create, :save_version?, :clear_altered_attributes]
+      CALLBACKS = [:set_new_version, :save_version_on_create, :save_version?]
       def self.included(base) # :nodoc:
         base.extend ClassMethods
       end
@@ -175,7 +175,7 @@ module ActiveRecord #:nodoc:
 
           cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column, 
             :version_column, :max_version_limit, :track_altered_attributes, :version_condition, :version_sequence_name, :non_versioned_columns,
-            :version_association_options
+            :version_association_options, :version_if_changed
 
           # legacy
           alias_method :non_versioned_fields,  :non_versioned_columns
@@ -185,8 +185,6 @@ module ActiveRecord #:nodoc:
             alias_method :non_versioned_fields,  :non_versioned_columns
             alias_method :non_versioned_fields=, :non_versioned_columns=
           end
-
-          send :attr_accessor, :altered_attributes
 
           self.versioned_class_name         = options[:class_name]  || "Version"
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
@@ -200,7 +198,8 @@ module ActiveRecord #:nodoc:
           self.version_association_options  = {
                                                 :class_name  => "#{self.to_s}::#{versioned_class_name}",
                                                 :foreign_key => versioned_foreign_key,
-                                                :dependent   => :delete_all
+                                                :dependent   => :delete_all,
+                                                :order => 'version'
                                               }.merge(options[:association_options] || {})
 
           if block_given?
@@ -228,16 +227,11 @@ module ActiveRecord #:nodoc:
             after_create :save_version_on_create
             after_update :save_version
             after_save   :clear_old_versions
-            after_save   :clear_altered_attributes
 
             unless options[:if_changed].nil?
               self.track_altered_attributes = true
               options[:if_changed] = [options[:if_changed]] unless options[:if_changed].is_a?(Array)
-              options[:if_changed].each do |attr_name|
-                define_method("#{attr_name}=") do |value|
-                  write_changed_attribute attr_name, value
-                end
-              end
+              self.version_if_changed = options[:if_changed]
             end
 
             include options[:extend] if options[:extend].is_a?(Module)
@@ -359,17 +353,10 @@ module ActiveRecord #:nodoc:
         def versioned_attributes
           self.attributes.keys.select { |k| !self.class.non_versioned_columns.include?(k) }
         end
-
-        # If called with no parameters, gets whether the current model has changed and needs to be versioned.
-        # If called with a single parameter, gets whether the parameter has changed.
-        def changed?(attr_name = nil)
-          attr_name.nil? ?
-            (!self.class.track_altered_attributes || (altered_attributes && altered_attributes.length > 0)) :
-            (altered_attributes && altered_attributes.include?(attr_name.to_s))
+        
+        def altered?
+          self.track_altered_attributes ? (self.version_if_changed.map(&:to_s) - changed).length > 0 : changed?
         end
-
-        # keep old dirty? method
-        alias_method :dirty?, :changed?
 
         # Clones a model.  Used when saving a new version or reverting a model's version.
         def clone_versioned_model(orig_model, new_model)
@@ -386,7 +373,7 @@ module ActiveRecord #:nodoc:
 
         # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>changed?</tt>.
         def save_version?
-          version_condition_met? && changed?
+          version_condition_met? && altered?
         end
 
         # Checks condition set in the :if option to check whether a revision should be created or not.  Override this for
@@ -434,18 +421,6 @@ module ActiveRecord #:nodoc:
           def next_version
             return 1 if new_record?
             (versions.calculate(:max, :version) || 0) + 1
-          end
-
-          # clears current changed attributes.  Called after save.
-          def clear_altered_attributes
-            self.altered_attributes = []
-          end
-
-          def write_changed_attribute(attr_name, attr_value)
-            # Convert to db type for comparison. Avoids failing Float<=>String comparisons.
-            attr_value_for_db = self.class.columns_hash[attr_name.to_s].type_cast(attr_value)
-            (self.altered_attributes ||= []) << attr_name.to_s unless self.changed?(attr_name) || self.send(attr_name) == attr_value_for_db
-            write_attribute(attr_name, attr_value_for_db)
           end
 
         module ClassMethods
