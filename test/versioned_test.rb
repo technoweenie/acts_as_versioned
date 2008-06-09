@@ -32,7 +32,7 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 24, p.version
     assert_equal 'Welcome to the weblog', p.title
 
-    assert p.revert_to!(p.versions.first.version), "Couldn't revert to 23"
+    assert p.revert_to!(23), "Couldn't revert to 23"
     assert_equal 23, p.version
     assert_equal 'Welcome to the weblg', p.title
   end
@@ -59,7 +59,7 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 24, p.version
     assert_equal 'Welcome to the weblog', p.title
 
-    assert p.revert_to!(p.versions.first), "Couldn't revert to 23"
+    assert p.revert_to!(p.versions.find_by_version(23)), "Couldn't revert to 23"
     assert_equal 23, p.version
     assert_equal 'Welcome to the weblg', p.title
   end
@@ -213,11 +213,6 @@ class VersionedTest < Test::Unit::TestCase
     assert SpecialLockedPage.track_altered_attributes
   end
 
-  def test_version_order
-    assert_equal 23, pages(:welcome).versions.first.version
-    assert_equal 24, pages(:welcome).versions.last.version
-  end
-
   def test_track_altered_attributes
     p = LockedPage.create! :title => "title"
     assert_equal 1, p.lock_version
@@ -288,7 +283,6 @@ class VersionedTest < Test::Unit::TestCase
     association = Page.reflect_on_association(:versions)
     options = association.options
     assert_equal :delete_all, options[:dependent]
-    assert_equal 'version', options[:order]
 
     association = Widget.reflect_on_association(:versions)
     options = association.options
