@@ -238,24 +238,11 @@ class VersionedTest < Test::Unit::TestCase
   end
 
   def test_find_versions
-    assert_equal 2, locked_pages(:welcome).versions.size
-    assert_equal 1, locked_pages(:welcome).versions.find(:all, :conditions => ['title LIKE ?', '%weblog%']).length
-    assert_equal 2, locked_pages(:welcome).versions.find(:all, :conditions => ['title LIKE ?', '%web%']).length
-    assert_equal 0, locked_pages(:thinking).versions.find(:all, :conditions => ['title LIKE ?', '%web%']).length
-    assert_equal 2, locked_pages(:welcome).versions.length
+    assert_equal 1, locked_pages(:welcome).versions.find(:all, :conditions => ['title LIKE ?', '%weblog%']).size
   end
 
   def test_find_version
-    assert_equal page_versions(:welcome_1), Page.find_version(pages(:welcome).id, 23)
-    assert_equal page_versions(:welcome_2), Page.find_version(pages(:welcome).id, 24)
-    assert_equal pages(:welcome), Page.find_version(pages(:welcome).id)
-
-    assert_equal page_versions(:welcome_1), pages(:welcome).find_version(23)
-    assert_equal page_versions(:welcome_2), pages(:welcome).find_version(24)
-    assert_equal pages(:welcome), pages(:welcome).find_version
-
-    assert_raise(ActiveRecord::RecordNotFound) { Page.find_version(pages(:welcome).id, 1) }
-    assert_raise(ActiveRecord::RecordNotFound) { Page.find_version(0, 23) }
+    assert_equal page_versions(:welcome_1), pages(:welcome).versions.find_by_version(23)
   end
 
   def test_with_sequence
@@ -333,8 +320,6 @@ class VersionedTest < Test::Unit::TestCase
   end
 
   def test_should_find_version_count
-    assert_equal 24, pages(:welcome).versions_count
-    assert_equal 24, page_versions(:welcome_1).versions_count
-    assert_equal 24, page_versions(:welcome_2).versions_count
+    assert_equal 2, pages(:welcome).versions.size
   end
 end
