@@ -55,6 +55,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :name, :string
     t.column :latitude, :float
     t.column :longitude, :float
+    t.column :doesnt_trigger_version,:string
     t.column :version, :integer
   end
 
@@ -63,6 +64,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :name, :string
     t.column :latitude, :float
     t.column :longitude, :float
+    t.column :doesnt_trigger_version,:string
     t.column :version, :integer
   end
 end
