@@ -147,15 +147,15 @@ class VersionedTest < Test::Unit::TestCase
 
     p = Page.create! :title => "title"
     assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions(true).size
+    assert_equal 1, p.versions.count
 
     p.update_attributes(:title => 'new title')
     assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions(true).size
+    assert_equal 1, p.versions.count
 
     p.update_attributes(:title => 'a title')
     assert_equal 2, p.version
-    assert_equal 2, p.versions(true).size
+    assert_equal 2, p.versions.count
 
     # reset original if condition
     Page.class_eval { alias_method :feeling_good?, :old_feeling_good }
@@ -168,15 +168,15 @@ class VersionedTest < Test::Unit::TestCase
 
     p = Page.create! :title => "title"
     assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions(true).size
+    assert_equal 1, p.versions.count
 
     p.update_attributes(:title => 'a title')
     assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions(true).size
+    assert_equal 1, p.versions.count
 
     p.update_attributes(:title => 'b title')
     assert_equal 2, p.version
-    assert_equal 2, p.versions(true).size
+    assert_equal 2, p.versions.count
 
     # reset original if condition
     Page.version_condition = old_condition
@@ -322,25 +322,24 @@ class VersionedTest < Test::Unit::TestCase
   def test_should_find_version_count
     assert_equal 2, pages(:welcome).versions.size
   end
-  
+
   def test_if_changed_creates_version_if_a_listed_column_is_changed
-    landmarks(:washington).name="Washington"
+    landmarks(:washington).name = "Washington"
     assert landmarks(:washington).changed?
     assert landmarks(:washington).altered?
   end
 
   def test_if_changed_creates_version_if_all_listed_columns_are_changed
-    landmarks(:washington).name="Washington"
-    landmarks(:washington).latitude=1.0
-    landmarks(:washington).longitude=1.0
+    landmarks(:washington).name = "Washington"
+    landmarks(:washington).latitude = 1.0
+    landmarks(:washington).longitude = 1.0
     assert landmarks(:washington).changed?
     assert landmarks(:washington).altered?
   end
 
   def test_if_changed_does_not_create_new_version_if_unlisted_column_is_changed
-    landmarks(:washington).doesnt_trigger_version="This should not trigger version"
+    landmarks(:washington).doesnt_trigger_version = "This should not trigger version"
     assert landmarks(:washington).changed?
     assert !landmarks(:washington).altered?
   end
-
 end
