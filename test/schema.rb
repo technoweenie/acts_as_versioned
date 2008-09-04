@@ -3,6 +3,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :version, :integer
     t.column :title, :string, :limit => 255
     t.column :body, :text
+    t.column :created_on, :datetime
     t.column :updated_on, :datetime
     t.column :author_id, :integer
     t.column :revisor_id, :integer
@@ -13,6 +14,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :version, :integer
     t.column :title, :string, :limit => 255
     t.column :body, :text
+    t.column :created_on, :datetime
     t.column :updated_on, :datetime
     t.column :author_id, :integer
     t.column :revisor_id, :integer
