@@ -181,7 +181,7 @@ module ActiveRecord #:nodoc:
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
           self.versioned_table_name         = options[:table_name]  || "#{table_name_prefix}#{base_class.name.demodulize.underscore}_versions#{table_name_suffix}"
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
-          self.version_column               = options[:version_column]     || 'version'
+          @@version_column = self.version_column               = options[:version_column]     || 'version'
           self.version_sequence_name        = options[:sequence_name]
           self.max_version_limit            = options[:limit].to_i
           self.version_condition            = options[:if] || true
@@ -205,12 +205,12 @@ module ActiveRecord #:nodoc:
             has_many :versions, version_association_options do
               # finds earliest version of this record
               def earliest
-                @earliest ||= find(:first, :order => 'version')
+                @earliest ||= find(:first, :order => @@version_column)
               end
 
               # find latest version of this record
               def latest
-                @latest ||= find(:first, :order => 'version desc')
+                @latest ||= find(:first, :order => "#{@@version_column} desc")
               end
             end
             before_save  :set_new_version
@@ -276,7 +276,7 @@ module ActiveRecord #:nodoc:
             @saving_version = nil
             rev = self.class.versioned_class.new
             clone_versioned_model(self, rev)
-            rev.version = send(self.class.version_column)
+            rev.send("#{self.class.version_column}=", send(self.class.version_column))
             rev.send("#{self.class.versioned_foreign_key}=", id)
             rev.save
           end
@@ -288,7 +288,7 @@ module ActiveRecord #:nodoc:
           return if self.class.max_version_limit == 0
           excess_baggage = send(self.class.version_column).to_i - self.class.max_version_limit
           if excess_baggage > 0
-            self.class.versioned_class.delete_all ["version <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id]
+            self.class.versioned_class.delete_all ["#{self.class.version_column} <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id]
           end
         end
 
@@ -297,10 +297,10 @@ module ActiveRecord #:nodoc:
           if version.is_a?(self.class.versioned_class)
             return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
           else
-            return false unless version = versions.find_by_version(version)
+            return false unless version = versions.send("find_by_#{self.class.version_column}", version)
           end
           self.clone_versioned_model(version, self)
-          send("#{self.class.version_column}=", version.version)
+          send("#{self.class.version_column}=", version.send(self.class.version_column))
           true
         end
 
@@ -392,7 +392,7 @@ module ActiveRecord #:nodoc:
 
           # Gets the next available version for the current record, or 1 for a new record
           def next_version
-            (new_record? ? 0 : versions.calculate(:max, :version).to_i) + 1
+            (new_record? ? 0 : versions.calculate(:max, version_column).to_i) + 1
           end
 
         module ClassMethods
@@ -410,12 +410,12 @@ module ActiveRecord #:nodoc:
           def create_versioned_table(create_table_options = {})
             # create version column in main table if it does not exist
             if !self.content_columns.find { |c| %w(version lock_version).include? c.name }
-              self.connection.add_column table_name, :version, :integer
+              self.connection.add_column table_name, version_column, :integer
             end
 
             self.connection.create_table(versioned_table_name, create_table_options) do |t|
               t.column versioned_foreign_key, :integer
-              t.column :version, :integer
+              t.column version_column, :integer
             end
 
             updated_col = nil
