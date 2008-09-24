@@ -181,7 +181,7 @@ module ActiveRecord #:nodoc:
           self.versioned_foreign_key        = options[:foreign_key] || self.to_s.foreign_key
           self.versioned_table_name         = options[:table_name]  || "#{table_name_prefix}#{base_class.name.demodulize.underscore}_versions#{table_name_suffix}"
           self.versioned_inheritance_column = options[:inheritance_column] || "versioned_#{inheritance_column}"
-          @@version_column = self.version_column               = options[:version_column]     || 'version'
+          self.version_column               = options[:version_column]     || 'version'
           self.version_sequence_name        = options[:sequence_name]
           self.max_version_limit            = options[:limit].to_i
           self.version_condition            = options[:if] || true
@@ -201,16 +201,16 @@ module ActiveRecord #:nodoc:
             options[:extend] = self.const_get(extension_module_name)
           end
 
-          class_eval do
+          class_eval <<-CLASS_METHODS
             has_many :versions, version_association_options do
               # finds earliest version of this record
               def earliest
-                @earliest ||= find(:first, :order => @@version_column)
+                @earliest ||= find(:first, :order => '#{version_column}')
               end
 
               # find latest version of this record
               def latest
-                @latest ||= find(:first, :order => "#{@@version_column} desc")
+                @latest ||= find(:first, :order => '#{version_column} desc')
               end
             end
             before_save  :set_new_version
@@ -224,7 +224,7 @@ module ActiveRecord #:nodoc:
             end
 
             include options[:extend] if options[:extend].is_a?(Module)
-          end
+          CLASS_METHODS
 
           # create the dynamic versioned model
           const_set(versioned_class_name, Class.new(ActiveRecord::Base)).class_eval do
