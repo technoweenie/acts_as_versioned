@@ -95,12 +95,7 @@ module ActiveRecord #:nodoc:
         #     end
         #
         # * <tt>if_changed</tt> - Simple way of specifying attributes that are required to be changed before saving a model.  This takes
-        #   either a symbol or array of symbols.  WARNING - This will attempt to overwrite any attribute setters you may have.
-        #   Use this instead if you want to write your own attribute setters (and ignore if_changed):
-        # 
-        #     def name=(new_name)
-        #       write_changed_attribute :name, new_name
-        #     end
+        #   either a symbol or array of symbols.
         #
         # * <tt>extend</tt> - Lets you specify a module to be mixed in both the original and versioned models.  You can also just pass a block
         #   to create an anonymous mixin:
@@ -220,7 +215,7 @@ module ActiveRecord #:nodoc:
             unless options[:if_changed].nil?
               self.track_altered_attributes = true
               options[:if_changed] = [options[:if_changed]] unless options[:if_changed].is_a?(Array)
-              self.version_if_changed = options[:if_changed]
+              self.version_if_changed = options[:if_changed].map(&:to_s)
             end
 
             include options[:extend] if options[:extend].is_a?(Module)
@@ -327,7 +322,7 @@ module ActiveRecord #:nodoc:
         end
         
         def altered?
-          track_altered_attributes ? (version_if_changed.map(&:to_s) - changed).length < version_if_changed.length : changed?
+          track_altered_attributes ? (version_if_changed - changed).length < version_if_changed.length : changed?
         end
 
         # Clones a model.  Used when saving a new version or reverting a model's version.
