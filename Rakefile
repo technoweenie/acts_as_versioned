@@ -1,7 +1,5 @@
 require 'rubygems'
 
-Gem::manage_gems
-
 require 'rake/rdoctask'
 require 'rake/packagetask'
 require 'rake/gempackagetask'
