@@ -257,6 +257,8 @@ module ActiveRecord #:nodoc:
             :foreign_key => versioned_foreign_key
           versioned_class.send :include, options[:extend]         if options[:extend].is_a?(Module)
           versioned_class.set_sequence_name version_sequence_name if version_sequence_name
+          
+          create_versioned_table
         end
       end
 
@@ -404,10 +406,13 @@ module ActiveRecord #:nodoc:
           # Rake migration task to create the versioned table using options passed to acts_as_versioned
           def create_versioned_table(create_table_options = {})
             # create version column in main table if it does not exist
-            if !self.content_columns.find { |c| %w(version lock_version).include? c.name }
+            if !self.content_columns.find { |c| [version_column.to_s, 'lock_version'].include? c.name }
               self.connection.add_column table_name, version_column, :integer
+              self.reset_column_information
             end
 
+            return if connection.tables.include?(versioned_table_name)
+            
             self.connection.create_table(versioned_table_name, create_table_options) do |t|
               t.column versioned_foreign_key, :integer
               t.column version_column, :integer
@@ -434,6 +439,8 @@ module ActiveRecord #:nodoc:
             if updated_col.nil?
               self.connection.add_column versioned_table_name, :updated_at, :timestamp
             end
+            
+            self.connection.create_index versioned_table_name, versioned_foreign_key
           end
 
           # Rake migration task to drop the versioned table
