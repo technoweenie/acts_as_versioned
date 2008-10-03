@@ -225,7 +225,7 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 1, p.lock_version
     assert_equal 1, p.versions(true).size
 
-    p.title = 'title'
+    p.body = 'whoa'
     assert !p.save_version?
     p.save
     assert_equal 2, p.lock_version # still increments version because of optimistic locking

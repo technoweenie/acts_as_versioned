@@ -30,6 +30,7 @@ ActiveRecord::Schema.define(:version => 0) do
   create_table :locked_pages, :force => true do |t|
     t.column :lock_version, :integer
     t.column :title, :string, :limit => 255
+    t.column :body, :text
     t.column :type, :string, :limit => 255
   end
 
@@ -37,6 +38,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :page_id, :integer
     t.column :lock_version, :integer
     t.column :title, :string, :limit => 255
+    t.column :body, :text
     t.column :version_type, :string, :limit => 255
     t.column :updated_at, :datetime
   end
