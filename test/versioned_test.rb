@@ -88,7 +88,7 @@ class VersionedTest < Test::Unit::TestCase
     assert_equal 'Welcome to the weblog', p.title
     assert_equal 'LockedPage', p.versions.first.version_type
 
-    assert p.revert_to!(p.versions.first.version), "Couldn't revert to 23"
+    assert p.revert_to!(p.versions.first.lock_version), "Couldn't revert to 23"
     assert_equal 'Welcome to the weblg', p.title
     assert_equal 'LockedPage', p.versions.first.version_type
   end
@@ -115,7 +115,7 @@ class VersionedTest < Test::Unit::TestCase
     p = locked_pages(:thinking)
     assert_equal 'So I was thinking', p.title
 
-    assert p.revert_to!(p.versions.first.version), "Couldn't revert to 1"
+    assert p.revert_to!(p.versions.first.lock_version), "Couldn't revert to 1"
     assert_equal 'So I was thinking!!!', p.title
     assert_equal 'SpecialLockedPage', p.versions.first.version_type
   end
