@@ -440,7 +440,7 @@ module ActiveRecord #:nodoc:
               self.connection.add_column versioned_table_name, :updated_at, :timestamp
             end
             
-            self.connection.create_index versioned_table_name, versioned_foreign_key
+            self.connection.add_index versioned_table_name, versioned_foreign_key
           end
 
           # Rake migration task to drop the versioned table
