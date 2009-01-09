@@ -257,8 +257,6 @@ module ActiveRecord #:nodoc:
             :foreign_key => versioned_foreign_key
           versioned_class.send :include, options[:extend]         if options[:extend].is_a?(Module)
           versioned_class.set_sequence_name version_sequence_name if version_sequence_name
-          
-          create_versioned_table
         end
       end
 
