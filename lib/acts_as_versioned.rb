@@ -416,9 +416,7 @@ module ActiveRecord #:nodoc:
               t.column version_column, :integer
             end
 
-            updated_col = nil
             self.versioned_columns.each do |col| 
-              updated_col = col if !updated_col && %(updated_at updated_on).include?(col.name)
               self.connection.add_column versioned_table_name, col.name, col.type, 
                 :limit     => col.limit, 
                 :default   => col.default,
@@ -432,10 +430,6 @@ module ActiveRecord #:nodoc:
                 :default   => type_col.default,
                 :scale     => type_col.scale,
                 :precision => type_col.precision
-            end
-
-            if updated_col.nil?
-              self.connection.add_column versioned_table_name, :updated_at, :timestamp
             end
             
             self.connection.add_index versioned_table_name, versioned_foreign_key
