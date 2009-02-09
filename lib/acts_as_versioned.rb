@@ -409,7 +409,7 @@ module ActiveRecord #:nodoc:
               self.reset_column_information
             end
 
-            return if connection.tables.include?(versioned_table_name.to_s)
+            return if connection.table_exists?(versioned_table_name)
             
             self.connection.create_table(versioned_table_name, create_table_options) do |t|
               t.column versioned_foreign_key, :integer
