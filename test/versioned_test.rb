@@ -14,13 +14,6 @@ class VersionedTest < Test::Unit::TestCase
     assert_instance_of Page.versioned_class, p.versions.first
   end
 
-  def test_version_has_unique_created_at
-    p = pages(:welcome)
-    p.title = 'update me'
-    p.save!
-    assert_not_equal p.created_on, p.versions.latest.created_on
-  end
-
   def test_saves_without_revision
     p = pages(:welcome)
     old_versions = p.versions.count
