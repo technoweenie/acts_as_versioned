@@ -471,9 +471,11 @@ module ActiveRecord #:nodoc:
           def without_locking(&block)
             current = ActiveRecord::Base.lock_optimistically
             ActiveRecord::Base.lock_optimistically = false if current
-            result = block.call
-            ActiveRecord::Base.lock_optimistically = true if current
-            result
+            begin
+              block.call
+            ensure
+              ActiveRecord::Base.lock_optimistically = true if current
+            end
           end
         end
       end
