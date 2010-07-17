@@ -2,7 +2,7 @@ require File.join(File.dirname(__FILE__), 'abstract_unit')
 require File.join(File.dirname(__FILE__), 'fixtures/page')
 require File.join(File.dirname(__FILE__), 'fixtures/widget')
 
-class VersionedTest < Test::Unit::TestCase
+class VersionedTest < ActiveSupport::TestCase
   fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions, :authors, :landmarks, :landmark_versions
   set_fixture_class :page_versions => Page::Version
 

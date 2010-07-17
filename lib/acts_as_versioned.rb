@@ -200,12 +200,12 @@ module ActiveRecord #:nodoc:
             has_many :versions, version_association_options do
               # finds earliest version of this record
               def earliest
-                @earliest ||= find(:first, :order => '#{version_column}')
+                @earliest ||= order('#{version_column}').first
               end
 
               # find latest version of this record
               def latest
-                @latest ||= find(:first, :order => '#{version_column} desc')
+                @latest ||= order('#{version_column} desc').first
               end
             end
             before_save  :set_new_version
@@ -226,14 +226,16 @@ module ActiveRecord #:nodoc:
             def self.reloadable? ; false ; end
             # find first version before the given version
             def self.before(version)
-              find :first, :order => 'version desc',
-                :conditions => ["#{original_class.versioned_foreign_key} = ? and version < ?", version.send(original_class.versioned_foreign_key), version.version]
+              where(["#{original_class.versioned_foreign_key} = ? and version < ?", version.send(original_class.versioned_foreign_key), version.version]).
+              order('version DESC').
+              first
             end
 
             # find first version after the given version.
             def self.after(version)
-              find :first, :order => 'version',
-                :conditions => ["#{original_class.versioned_foreign_key} = ? and version > ?", version.send(original_class.versioned_foreign_key), version.version]
+              where(["#{original_class.versioned_foreign_key} = ? and version > ?", version.send(original_class.versioned_foreign_key), version.version]).
+              order('version ASC').
+              first
             end
 
             def previous
@@ -292,7 +294,7 @@ module ActiveRecord #:nodoc:
           if version.is_a?(self.class.versioned_class)
             return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
           else
-            return false unless version = versions.send("find_by_#{self.class.version_column}", version)
+            return false unless version = versions.where(self.class.version_column => version).first
           end
           self.clone_versioned_model(version, self)
           send("#{self.class.version_column}=", version.send(self.class.version_column))
@@ -387,7 +389,7 @@ module ActiveRecord #:nodoc:
 
           # Gets the next available version for the current record, or 1 for a new record
           def next_version
-            (new_record? ? 0 : versions.calculate(:max, version_column).to_i) + 1
+            (new_record? ? 0 : versions.calculate(:maximum, version_column).to_i) + 1
           end
 
         module ClassMethods

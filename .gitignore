@@ -1,0 +1,5 @@
+.bundle
+.idea
+test/*.log
+.rvmrc
+*.sqlite3.db

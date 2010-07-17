@@ -1,15 +1,13 @@
-$:.unshift(File.dirname(__FILE__) + '/../../../rails/activesupport/lib')
-$:.unshift(File.dirname(__FILE__) + '/../../../rails/activerecord/lib')
+require "rubygems"
+require "bundler"
+Bundler.setup(:default, :development)
+
 $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'test/unit'
-begin
-  require 'active_support'
-  require 'active_record'
-  require 'active_record/fixtures'
-rescue LoadError
-  require 'rubygems'
-  retry
-end
+require 'active_support'
+require 'active_record'
+require 'active_record/fixtures'
+require 'active_record/test_case'
 
 begin
   require 'ruby-debug'
@@ -34,15 +32,18 @@ if ENV['DB'] == 'postgresql'
   ActiveRecord::Base.connection.execute "ALTER TABLE widget_versions ADD COLUMN id INTEGER PRIMARY KEY DEFAULT nextval('widgets_seq');"
 end
 
-Test::Unit::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures/"
-$:.unshift(Test::Unit::TestCase.fixture_path)
+class ActiveSupport::TestCase #:nodoc:
+  include ActiveRecord::TestFixtures
 
-class Test::Unit::TestCase #:nodoc:
+  self.fixture_path = File.dirname(__FILE__) + "/fixtures/"
+  
   # Turn off transactional fixtures if you're working with MyISAM tables in MySQL
   self.use_transactional_fixtures = true
-  
+
   # Instantiated fixtures are slow, but give you @david where you otherwise would need people(:david)
   self.use_instantiated_fixtures  = false
 
   # Add more helper methods to be used by all tests here...
 end
+
+$:.unshift(ActiveSupport::TestCase.fixture_path)

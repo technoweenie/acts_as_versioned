@@ -6,7 +6,7 @@ if ActiveRecord::Base.connection.supports_migrations?
     acts_as_versioned
   end
 
-  class MigrationTest < Test::Unit::TestCase
+  class MigrationTest < ActiveSupport::TestCase
     self.use_transactional_fixtures = false
     def teardown
       if ActiveRecord::Base.connection.respond_to?(:initialize_schema_information)
