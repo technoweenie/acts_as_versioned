@@ -163,8 +163,6 @@ module ActiveRecord #:nodoc:
         # don't allow multiple calls
         return if self.included_modules.include?(ActiveRecord::Acts::Versioned::Behaviors)
 
-        include ActiveRecord::Acts::Versioned::Behaviors
-
         cattr_accessor :versioned_class_name, :versioned_foreign_key, :versioned_table_name, :versioned_inheritance_column,
                        :version_column, :max_version_limit, :track_altered_attributes, :version_condition, :version_sequence_name, :non_versioned_columns,
                        :version_association_options, :version_if_changed
@@ -193,23 +191,19 @@ module ActiveRecord #:nodoc:
           options[:extend] = self.const_get(extension_module_name)
         end
 
-        class_eval do
-          has_many :versions, version_association_options
-
-          before_save :set_new_version
-          after_save :save_version
-          after_save :clear_old_versions
-
-          unless options[:if_changed].nil?
-            self.track_altered_attributes = true
-            options[:if_changed] = [options[:if_changed]] unless options[:if_changed].is_a?(Array)
-            self.version_if_changed = options[:if_changed].map(&:to_s)
-          end
-
-          include options[:extend] if options[:extend].is_a?(Module)
+        unless options[:if_changed].nil?
+          self.track_altered_attributes = true
+          options[:if_changed] = [options[:if_changed]] unless options[:if_changed].is_a?(Array)
+          self.version_if_changed = options[:if_changed].map(&:to_s)
         end
 
-        # create the dynamic versioned model
+        include options[:extend] if options[:extend].is_a?(Module)
+
+        include ActiveRecord::Acts::Versioned::Behaviors
+
+        #
+        # Create the dynamic versioned model
+        #
         const_set(versioned_class_name, Class.new(ActiveRecord::Base)).class_eval do
           def self.reloadable?;
             false;
@@ -266,7 +260,11 @@ module ActiveRecord #:nodoc:
         extend ActiveSupport::Concern
 
         included do
+          has_many :versions, self.version_association_options
 
+          before_save :set_new_version
+          after_save :save_version
+          after_save :clear_old_versions
         end
 
         module InstanceMethods
