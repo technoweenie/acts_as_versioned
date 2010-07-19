@@ -1,5 +1,7 @@
 *GIT* (version numbers are overrated)
 
+* 0.6 (19 Jul 2010) Rails 3 refactoring by gvarela!
+
 * (16 Jun 2008) Backwards Compatibility is overrated (big updates for rails 2.1)
 
   * Use ActiveRecord 2.1's dirty attribute checking instead [Asa Calow]

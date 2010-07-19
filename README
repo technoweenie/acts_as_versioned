@@ -8,21 +8,17 @@ Install
 
 * gem install acts_as_versioned
 
-Rubyforge project
+<3 GitHub
 
-* http://rubyforge.org/projects/ar-versioned
+* http://github.com/technoweenie/acts_as_versioned
 
-RDocs
+Gemcutter FTW
 
-* http://ar-versioned.rubyforge.org
+* http://gemcutter.org/gems/acts_as_versioned
 
 Subversion
 
-* http://techno-weenie.net/svn/projects/acts_as_versioned
-
-Collaboa
-
-* http://collaboa.techno-weenie.net/repository/browse/acts_as_versioned
+* http://svn.github.com/technoweenie/acts_as_versioned.git
 
 Special thanks to Dreamer on ##rubyonrails for help in early testing.  His ServerSideWiki (http://serversidewiki.com) 
 was the first project to use acts_as_versioned <em>in the wild</em>.
