@@ -1,180 +1,146 @@
 require 'rubygems'
+require 'rake'
+require 'date'
 
-require 'rake/rdoctask'
-require 'rake/packagetask'
-require 'rake/gempackagetask'
-require 'rake/testtask'
-require 'rake/contrib/rubyforgepublisher'
+#############################################################################
+#
+# Helper functions
+#
+#############################################################################
 
-PKG_NAME           = 'acts_as_versioned'
-PKG_VERSION        = '0.3.1'
-PKG_FILE_NAME      = "#{PKG_NAME}-#{PKG_VERSION}"
-PROD_HOST          = "technoweenie@bidwell.textdrive.com"
-RUBY_FORGE_PROJECT = 'ar-versioned'
-RUBY_FORGE_USER    = 'technoweenie'
-
-desc 'Default: run unit tests.'
-task :default => :test
-
-desc 'Test the calculations plugin.'
-Rake::TestTask.new(:test) do |t|
-  t.libs << 'lib'
-  t.pattern = 'test/**/*_test.rb'
-  t.verbose = true
+def name
+  @name ||= Dir['*.gemspec'].first.split('.').first
 end
 
-desc 'Generate documentation for the calculations plugin.'
-Rake::RDocTask.new(:rdoc) do |rdoc|
+def version
+  line = File.read("lib/#{name}.rb")[/^\s*VERSION\s*=\s*.*/]
+  line.match(/.*VERSION\s*=\s*['"](.*)['"]/)[1]
+end
+
+def date
+  Date.today.to_s
+end
+
+def rubyforge_project
+  name
+end
+
+def gemspec_file
+  "#{name}.gemspec"
+end
+
+def gem_file
+  "#{name}-#{version}.gem"
+end
+
+def replace_header(head, header_name)
+  head.sub!(/(\.#{header_name}\s*= ').*'/) { "#{$1}#{send(header_name)}'"}
+end
+
+#############################################################################
+#
+# Standard tasks
+#
+#############################################################################
+
+task :default => :test
+
+require 'rake/testtask'
+Rake::TestTask.new(:test) do |test|
+  test.libs << 'lib' << 'test'
+  test.pattern = 'test/**/*_test.rb'
+  test.verbose = true
+end
+
+desc "Generate RCov test coverage and open in your browser"
+task :coverage do
+  require 'rcov'
+  sh "rm -fr coverage"
+  sh "rcov test/test_*.rb"
+  sh "open coverage/index.html"
+end
+
+require 'rake/rdoctask'
+Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_dir = 'rdoc'
-  rdoc.title    = "#{PKG_NAME} -- Simple versioning with active record models"
-  rdoc.options << '--line-numbers --inline-source'
-  rdoc.rdoc_files.include('README', 'CHANGELOG', 'RUNNING_UNIT_TESTS')
+  rdoc.title = "#{name} #{version}"
+  rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
-spec = Gem::Specification.new do |s|
-  s.name            = PKG_NAME
-  s.version         = PKG_VERSION
-  s.platform        = Gem::Platform::RUBY
-  s.summary         = "Simple versioning with active record models"
-  s.files           = FileList["{lib,test}/**/*"].to_a + %w(README MIT-LICENSE CHANGELOG RUNNING_UNIT_TESTS)
-  s.files.delete      "acts_as_versioned_plugin.sqlite.db"
-  s.files.delete      "acts_as_versioned_plugin.sqlite3.db"
-  s.files.delete      "test/debug.log"
-  s.require_path    = 'lib'
-  s.autorequire     = 'acts_as_versioned'
-  s.has_rdoc        = true
-  s.test_files      = Dir['test/**/*_test.rb']
-  s.add_dependency    'activerecord', '>= 1.10.1'
-  s.add_dependency    'activesupport', '>= 1.1.1'
-  s.author          = "Rick Olson"
-  s.email           = "technoweenie@gmail.com"
-  s.homepage        = "http://techno-weenie.net"
+desc "Open an irb session preloaded with this library"
+task :console do
+  sh "irb -rubygems -r ./lib/#{name}.rb"
 end
 
-Rake::GemPackageTask.new(spec) do |pkg|
-  pkg.need_tar = true
+#############################################################################
+#
+# Custom tasks (add your own tasks here)
+#
+#############################################################################
+
+
+
+#############################################################################
+#
+# Packaging tasks
+#
+#############################################################################
+
+task :release => :build do
+  unless `git branch` =~ /^\* master$/
+    puts "You must be on the master branch to release!"
+    exit!
+  end
+  sh "git commit --allow-empty -a -m 'Release #{version}'"
+  sh "git tag v#{version}"
+  sh "git push origin master"
+  sh "git push v#{version}"
+  sh "gem push pkg/#{name}-#{version}.gem"
 end
 
-desc "Publish the API documentation"
-task :pdoc => [:rdoc] do
-  Rake::RubyForgePublisher.new(RUBY_FORGE_PROJECT, RUBY_FORGE_USER).upload
+task :build => :gemspec do
+  sh "mkdir -p pkg"
+  sh "gem build #{gemspec_file}"
+  sh "mv #{gem_file} pkg"
 end
 
-desc 'Publish the gem and API docs'
-task :publish => [:pdoc, :rubyforge_upload]
+task :gemspec => :validate do
+  # read spec file and split out manifest section
+  spec = File.read(gemspec_file)
+  head, manifest, tail = spec.split("  # = MANIFEST =\n")
 
-desc "Publish the release files to RubyForge."
-task :rubyforge_upload => :package do
-  files = %w(gem tgz).map { |ext| "pkg/#{PKG_FILE_NAME}.#{ext}" }
+  # replace name version and date
+  replace_header(head, :name)
+  replace_header(head, :version)
+  replace_header(head, :date)
+  #comment this out if your rubyforge_project has a different name
+  replace_header(head, :rubyforge_project)
 
-  if RUBY_FORGE_PROJECT then
-    require 'net/http'
-    require 'open-uri'
+  # determine file list from git ls-files
+  files = `git ls-files`.
+    split("\n").
+    sort.
+    reject { |file| file =~ /^\./ }.
+    reject { |file| file =~ /^(rdoc|pkg)/ }.
+    map { |file| "    #{file}" }.
+    join("\n")
 
-    project_uri = "http://rubyforge.org/projects/#{RUBY_FORGE_PROJECT}/"
-    project_data = open(project_uri) { |data| data.read }
-    group_id = project_data[/[?&]group_id=(\d+)/, 1]
-    raise "Couldn't get group id" unless group_id
+  # piece file back together and write
+  manifest = "  s.files = %w[\n#{files}\n  ]\n"
+  spec = [head, manifest, tail].join("  # = MANIFEST =\n")
+  File.open(gemspec_file, 'w') { |io| io.write(spec) }
+  puts "Updated #{gemspec_file}"
+end
 
-    # This echos password to shell which is a bit sucky
-    if ENV["RUBY_FORGE_PASSWORD"]
-      password = ENV["RUBY_FORGE_PASSWORD"]
-    else
-      print "#{RUBY_FORGE_USER}@rubyforge.org's password: "
-      password = STDIN.gets.chomp
-    end
-
-    login_response = Net::HTTP.start("rubyforge.org", 80) do |http|
-      data = [
-        "login=1",
-        "form_loginname=#{RUBY_FORGE_USER}",
-        "form_pw=#{password}"
-      ].join("&")
-      http.post("/account/login.php", data)
-    end
-
-    cookie = login_response["set-cookie"]
-    raise "Login failed" unless cookie
-    headers = { "Cookie" => cookie }
-
-    release_uri = "http://rubyforge.org/frs/admin/?group_id=#{group_id}"
-    release_data = open(release_uri, headers) { |data| data.read }
-    package_id = release_data[/[?&]package_id=(\d+)/, 1]
-    raise "Couldn't get package id" unless package_id
-
-    first_file = true
-    release_id = ""
-
-    files.each do |filename|
-      basename  = File.basename(filename)
-      file_ext  = File.extname(filename)
-      file_data = File.open(filename, "rb") { |file| file.read }
-
-      puts "Releasing #{basename}..."
-
-      release_response = Net::HTTP.start("rubyforge.org", 80) do |http|
-        release_date = Time.now.strftime("%Y-%m-%d %H:%M")
-        type_map = {
-          ".zip"    => "3000",
-          ".tgz"    => "3110",
-          ".gz"     => "3110",
-          ".gem"    => "1400"
-        }; type_map.default = "9999"
-        type = type_map[file_ext]
-        boundary = "rubyqMY6QN9bp6e4kS21H4y0zxcvoor"
-
-        query_hash = if first_file then
-          {
-            "group_id" => group_id,
-            "package_id" => package_id,
-            "release_name" => PKG_FILE_NAME,
-            "release_date" => release_date,
-            "type_id" => type,
-            "processor_id" => "8000", # Any
-            "release_notes" => "",
-            "release_changes" => "",
-            "preformatted" => "1",
-            "submit" => "1"
-          }
-        else
-          {
-            "group_id" => group_id,
-            "release_id" => release_id,
-            "package_id" => package_id,
-            "step2" => "1",
-            "type_id" => type,
-            "processor_id" => "8000", # Any
-            "submit" => "Add This File"
-          }
-        end
-
-        query = "?" + query_hash.map do |(name, value)|
-          [name, URI.encode(value)].join("=")
-        end.join("&")
-
-        data = [
-          "--" + boundary,
-          "Content-Disposition: form-data; name=\"userfile\"; filename=\"#{basename}\"",
-          "Content-Type: application/octet-stream",
-          "Content-Transfer-Encoding: binary",
-          "", file_data, ""
-          ].join("\x0D\x0A")
-
-        release_headers = headers.merge(
-          "Content-Type" => "multipart/form-data; boundary=#{boundary}"
-        )
-
-        target = first_file ? "/frs/admin/qrs.php" : "/frs/admin/editrelease.php"
-        http.post(target + query, data, release_headers)
-      end
-
-      if first_file then
-        release_id = release_response.body[/release_id=(\d+)/, 1]
-        raise("Couldn't get release id") unless release_id
-      end
-
-      first_file = false
-    end
+task :validate do
+  libfiles = Dir['lib/*'] - ["lib/#{name}.rb", "lib/#{name}"]
+  unless libfiles.empty?
+    puts "Directory `lib` should only contain a `#{name}.rb` file and `#{name}` dir."
+    exit!
+  end
+  unless Dir['VERSION*'].empty?
+    puts "A `VERSION` file at root level violates Gem best practices."
+    exit!
   end
 end

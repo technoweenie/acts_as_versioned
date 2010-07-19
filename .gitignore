@@ -1,5 +1,6 @@
 .bundle
 .idea
 test/*.log
+pkg
 .rvmrc
 *.sqlite3.db
