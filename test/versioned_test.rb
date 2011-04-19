@@ -1,6 +1,6 @@
-require File.join(File.dirname(__FILE__), 'abstract_unit')
-require File.join(File.dirname(__FILE__), 'fixtures/page')
-require File.join(File.dirname(__FILE__), 'fixtures/widget')
+require File.expand_path('../abstract_unit', __FILE__)
+require File.expand_path('../fixtures/page', __FILE__)
+require File.expand_path('../fixtures/widget', __FILE__)
 
 class VersionedTest < ActiveSupport::TestCase
   fixtures :pages, :page_versions, :locked_pages, :locked_pages_revisions, :authors, :landmarks, :landmark_versions

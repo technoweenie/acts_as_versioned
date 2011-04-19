@@ -1,4 +1,4 @@
-require File.join(File.dirname(__FILE__), 'abstract_unit')
+require File.expand_path('../abstract_unit', __FILE__)
 
 if ActiveRecord::Base.connection.supports_migrations? 
   class Thing < ActiveRecord::Base

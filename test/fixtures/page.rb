@@ -10,9 +10,9 @@ class Page < ActiveRecord::Base
       base.belongs_to :author
       base.belongs_to :revisor, :class_name => 'Author'
     end
-    
+
     def feeling_good?
-      @@feeling_good == true
+      self.class.feeling_good == true
     end
   end
 end
