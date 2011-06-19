@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   ## the sub! line in the Rakefile
   s.name              = 'acts_as_versioned'
   s.version           = '0.6.0'
-  s.date              = '2010-07-19'
+  s.date              = '2011-06-18'
   s.rubyforge_project = 'acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
@@ -25,9 +25,15 @@ Gem::Specification.new do |s|
   ## List the primary authors. If there are a bunch of authors, it's probably
   ## better to set the email to an email list or something. If you don't have
   ## a custom homepage, consider using your GitHub URL or the like.
-  s.authors  = ["Rick Olson"]
-  s.email    = 'technoweenie@gmail.com'
-  s.homepage = 'http://github.com/technoweenie/acts_as_versioned'
+  # The real primary author is obviously still Rick Olson, but it seems important
+  # to point to the correct github repo and since Rick is not in charge of that 
+  # particular repo... Ward, 2011-06-19
+  #s.authors  = ["Rick Olson"]
+  #s.email    = 'technoweenie@gmail.com'
+  #s.homepage = 'http://github.com/technoweenie/acts_as_versioned'
+  s.authors  = ["Ward Vandewege"]
+  s.email    = 'ward@jhvc.com'
+  s.homepage = 'http://github.com/cure/acts_as_versioned'
 
   ## This gets added to the $LOAD_PATH so that 'lib/NAME.rb' can be required as
   ## require 'NAME.rb' or'/lib/NAME/file.rb' can be as require 'NAME/file.rb'
