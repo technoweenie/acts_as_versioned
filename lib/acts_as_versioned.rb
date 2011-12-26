@@ -245,6 +245,13 @@ module ActiveRecord #:nodoc:
           def versions_count
             page.version
           end
+
+          # Returns true if record was deleted in original table, else
+          # false.
+          #
+          def deleted_in_original_table
+            not original_class.exists?(self.send original_class.versioned_foreign_key)
+	  end
         end
 
         versioned_class.cattr_accessor :original_class
