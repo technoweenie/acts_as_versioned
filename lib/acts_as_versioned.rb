@@ -335,9 +335,13 @@ module ActiveRecord #:nodoc:
           end
 
           if orig_model.is_a?(self.class.versioned_class)
-            new_model[new_model.class.inheritance_column] = orig_model[self.class.versioned_inheritance_column]
+            if new_model.attributes.has_key?(new_model.class.inheritance_column.to_s)
+              new_model[new_model.class.inheritance_column] = orig_model[self.class.versioned_inheritance_column]
+            end
           elsif new_model.is_a?(self.class.versioned_class)
-            new_model[self.class.versioned_inheritance_column] = orig_model[orig_model.class.inheritance_column]
+            if new_model.attributes.has_key?(self.class.versioned_inheritance_column.to_s)
+              new_model[self.class.versioned_inheritance_column] = orig_model[orig_model.class.inheritance_column]
+            end
           end
         end
 
