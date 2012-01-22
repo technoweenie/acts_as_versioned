@@ -249,153 +249,155 @@ module ActiveRecord #:nodoc:
 
         versioned_class.cattr_accessor :original_class
         versioned_class.original_class = self
-        versioned_class.set_table_name versioned_table_name
+        versioned_class.table_name = versioned_table_name
         versioned_class.belongs_to self.to_s.demodulize.underscore.to_sym,
                                    :class_name  => "::#{self.to_s}",
                                    :foreign_key => versioned_foreign_key
         versioned_class.send :include, options[:extend] if options[:extend].is_a?(Module)
-        versioned_class.set_sequence_name version_sequence_name if version_sequence_name
+        versioned_class.sequence_name = version_sequence_name if version_sequence_name
       end
 
       module Behaviors
         extend ActiveSupport::Concern
 
         included do
-          has_many :versions, self.version_association_options
+          has_many :versions, version_association_options
 
           before_save :set_new_version
           after_save :save_version
           after_save :clear_old_versions
         end
 
-        module InstanceMethods
-          # Saves a version of the model in the versioned table.  This is called in the after_save callback by default
-          def save_version
-            if @saving_version
-              @saving_version = nil
-              rev = self.class.versioned_class.new
-              clone_versioned_model(self, rev)
-              rev.send("#{self.class.version_column}=", send(self.class.version_column))
-              rev.send("#{self.class.versioned_foreign_key}=", id)
-              rev.save
+        # Saves a version of the model in the versioned table.  This is called in the after_save callback by default
+        def save_version
+          if @saving_version
+            @saving_version = nil
+            rev = self.class.versioned_class.new
+            clone_versioned_model(self, rev)
+            rev.send("#{self.class.version_column}=", send(self.class.version_column))
+            rev.send("#{self.class.versioned_foreign_key}=", id)
+            rev.save
+          end
+        end
+
+        # Clears old revisions if a limit is set with the :limit option in <tt>acts_as_versioned</tt>.
+        # Override this method to set your own criteria for clearing old versions.
+        def clear_old_versions
+          return if self.class.max_version_limit == 0
+          excess_baggage = send(self.class.version_column).to_i - self.class.max_version_limit
+          if excess_baggage > 0
+            self.class.versioned_class.delete_all ["#{self.class.version_column} <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id]
+          end
+        end
+
+        # Reverts a model to a given version.  Takes either a version number or an instance of the versioned model
+        def revert_to(version)
+          if version.is_a?(self.class.versioned_class)
+            return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
+          else
+            return false unless version = versions.where(self.class.version_column => version).first
+          end
+          self.clone_versioned_model(version, self)
+          send("#{self.class.version_column}=", version.send(self.class.version_column))
+          true
+        end
+
+        # Reverts a model to a given version and saves the model.
+        # Takes either a version number or an instance of the versioned model
+        def revert_to!(version)
+          revert_to(version) ? save_without_revision : false
+        end
+
+        # Temporarily turns off Optimistic Locking while saving.  Used when reverting so that a new version is not created.
+        def save_without_revision
+          save_without_revision!
+          true
+        rescue
+          false
+        end
+
+        def save_without_revision!
+          without_locking do
+            without_revision do
+              save!
             end
           end
+        end
 
-          # Clears old revisions if a limit is set with the :limit option in <tt>acts_as_versioned</tt>.
-          # Override this method to set your own criteria for clearing old versions.
-          def clear_old_versions
-            return if self.class.max_version_limit == 0
-            excess_baggage = send(self.class.version_column).to_i - self.class.max_version_limit
-            if excess_baggage > 0
-              self.class.versioned_class.delete_all ["#{self.class.version_column} <= ? and #{self.class.versioned_foreign_key} = ?", excess_baggage, id]
-            end
+        def altered?
+          track_altered_attributes ? (version_if_changed - changed).length < version_if_changed.length : changed?
+        end
+
+        # Clones a model.  Used when saving a new version or reverting a model's version.
+        def clone_versioned_model(orig_model, new_model)
+          self.class.versioned_columns.each do |col|
+            new_model[col.name] = orig_model.send(col.name) if orig_model.has_attribute?(col.name)
           end
 
-          # Reverts a model to a given version.  Takes either a version number or an instance of the versioned model
-          def revert_to(version)
-            if version.is_a?(self.class.versioned_class)
-              return false unless version.send(self.class.versioned_foreign_key) == id and !version.new_record?
-            else
-              return false unless version = versions.where(self.class.version_column => version).first
-            end
-            self.clone_versioned_model(version, self)
-            send("#{self.class.version_column}=", version.send(self.class.version_column))
-            true
-          end
-
-          # Reverts a model to a given version and saves the model.
-          # Takes either a version number or an instance of the versioned model
-          def revert_to!(version)
-            revert_to(version) ? save_without_revision : false
-          end
-
-          # Temporarily turns off Optimistic Locking while saving.  Used when reverting so that a new version is not created.
-          def save_without_revision
-            save_without_revision!
-            true
-          rescue
-            false
-          end
-
-          def save_without_revision!
-            without_locking do
-              without_revision do
-                save!
-              end
-            end
-          end
-
-          def altered?
-            track_altered_attributes ? (version_if_changed - changed).length < version_if_changed.length : changed?
-          end
-
-          # Clones a model.  Used when saving a new version or reverting a model's version.
-          def clone_versioned_model(orig_model, new_model)
-            self.class.versioned_columns.each do |col|
-              new_model[col.name] = orig_model.send(col.name) if orig_model.has_attribute?(col.name)
-            end
-
-            if orig_model.is_a?(self.class.versioned_class)
+          if orig_model.is_a?(self.class.versioned_class)
+            if new_model.attributes.has_key?(new_model.class.inheritance_column.to_s)
               new_model[new_model.class.inheritance_column] = orig_model[self.class.versioned_inheritance_column]
-            elsif new_model.is_a?(self.class.versioned_class)
+            end
+          elsif new_model.is_a?(self.class.versioned_class)
+            if new_model.attributes.has_key?(self.class.versioned_inheritance_column.to_s)
               new_model[self.class.versioned_inheritance_column] = orig_model[orig_model.class.inheritance_column]
             end
           end
+        end
 
-          # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>changed?</tt>.
-          def save_version?
-            version_condition_met? && altered?
+        # Checks whether a new version shall be saved or not.  Calls <tt>version_condition_met?</tt> and <tt>changed?</tt>.
+        def save_version?
+          version_condition_met? && altered?
+        end
+
+        # Checks condition set in the :if option to check whether a revision should be created or not.  Override this for
+        # custom version condition checking.
+        def version_condition_met?
+          case
+            when version_condition.is_a?(Symbol)
+              send(version_condition)
+            when version_condition.respond_to?(:call) && (version_condition.arity == 1 || version_condition.arity == -1)
+              version_condition.call(self)
+            else
+              version_condition
           end
+        end
 
-          # Checks condition set in the :if option to check whether a revision should be created or not.  Override this for
-          # custom version condition checking.
-          def version_condition_met?
-            case
-              when version_condition.is_a?(Symbol)
-                send(version_condition)
-              when version_condition.respond_to?(:call) && (version_condition.arity == 1 || version_condition.arity == -1)
-                version_condition.call(self)
-              else
-                version_condition
-            end
-          end
+        # Executes the block with the versioning callbacks disabled.
+        #
+        #   @foo.without_revision do
+        #     @foo.save
+        #   end
+        #
+        def without_revision(&block)
+          self.class.without_revision(&block)
+        end
 
-          # Executes the block with the versioning callbacks disabled.
-          #
-          #   @foo.without_revision do
-          #     @foo.save
-          #   end
-          #
-          def without_revision(&block)
-            self.class.without_revision(&block)
-          end
+        # Turns off optimistic locking for the duration of the block
+        #
+        #   @foo.without_locking do
+        #     @foo.save
+        #   end
+        #
+        def without_locking(&block)
+          self.class.without_locking(&block)
+        end
 
-          # Turns off optimistic locking for the duration of the block
-          #
-          #   @foo.without_locking do
-          #     @foo.save
-          #   end
-          #
-          def without_locking(&block)
-            self.class.without_locking(&block)
-          end
+        def empty_callback()
+        end
 
-          def empty_callback()
-          end
+        #:nodoc:
 
-          #:nodoc:
+        protected
+        # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
+        def set_new_version
+          @saving_version = new_record? || save_version?
+          self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
+        end
 
-          protected
-          # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
-          def set_new_version
-            @saving_version = new_record? || save_version?
-            self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
-          end
-
-          # Gets the next available version for the current record, or 1 for a new record
-          def next_version
-            (new_record? ? 0 : versions.calculate(:maximum, version_column).to_i) + 1
-          end
+        # Gets the next available version for the current record, or 1 for a new record
+        def next_version
+          (new_record? ? 0 : versions.calculate(:maximum, version_column).to_i) + 1
         end
 
         module ClassMethods

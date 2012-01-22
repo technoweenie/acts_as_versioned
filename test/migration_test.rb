@@ -1,4 +1,4 @@
-require File.join(File.dirname(__FILE__), 'abstract_unit')
+require File.expand_path('../abstract_unit', __FILE__)
 
 if ActiveRecord::Base.connection.supports_migrations? 
   class Thing < ActiveRecord::Base
@@ -19,7 +19,7 @@ if ActiveRecord::Base.connection.supports_migrations?
       
       Thing.connection.drop_table "things" rescue nil
       Thing.connection.drop_table "thing_versions" rescue nil
-      Thing.reset_column_information
+      Thing.reset_column_information rescue nil
     end
         
     def test_versioned_migration
