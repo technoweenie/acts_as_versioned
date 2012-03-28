@@ -40,11 +40,11 @@ Gem::Specification.new do |s|
 
   ## List your runtime dependencies here. Runtime dependencies are those
   ## that are needed for an end user to actually USE your code.
-  s.add_dependency('activerecord', ["~> 3.0.0.beta4"])
+  s.add_dependency('activerecord', ["=> 3.0.9"])
 
   ## List your development dependencies here. Development dependencies are
   ## those that are only needed during development
-  s.add_development_dependency('sqlite3-ruby', ["~> 1.3.1"])
+  s.add_development_dependency('sqlite3-ruby', ["=> 1.3.1"])
 
   ## Leave this section as-is. It will be automatically generated from the
   ## contents of your Git repository via the gemspec task. DO NOT REMOVE
