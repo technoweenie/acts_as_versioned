@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   ## the sub! line in the Rakefile
   s.name              = 'acts_as_versioned'
   s.version           = '0.6.0'
-  s.date              = '2010-07-19'
+  s.date              = '2012-03-28'
   s.rubyforge_project = 'acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
@@ -40,11 +40,11 @@ Gem::Specification.new do |s|
 
   ## List your runtime dependencies here. Runtime dependencies are those
   ## that are needed for an end user to actually USE your code.
-  s.add_dependency('activerecord', ["=> 3.0.9"])
+  s.add_dependency('activerecord', [">= 3.0.9"])
 
   ## List your development dependencies here. Development dependencies are
   ## those that are only needed during development
-  s.add_development_dependency('sqlite3-ruby', ["=> 1.3.1"])
+  s.add_development_dependency('sqlite3-ruby', [">= 1.3.1"])
 
   ## Leave this section as-is. It will be automatically generated from the
   ## contents of your Git repository via the gemspec task. DO NOT REMOVE
@@ -68,7 +68,7 @@ Gem::Specification.new do |s|
     test/fixtures/landmarks.yml
     test/fixtures/locked_pages.yml
     test/fixtures/locked_pages_revisions.yml
-    test/fixtures/migrations/1_add_versioned_tables.rb
+    test/fixtures/migrations/2_add_versioned_tables.rb
     test/fixtures/page.rb
     test/fixtures/page_versions.yml
     test/fixtures/pages.yml
