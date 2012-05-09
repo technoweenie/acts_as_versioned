@@ -251,7 +251,7 @@ module ActiveRecord #:nodoc:
           #
           def deleted_in_original_table
             not original_class.exists?(self.send original_class.versioned_foreign_key)
-	  end
+          end
         end
 
         versioned_class.cattr_accessor :original_class
