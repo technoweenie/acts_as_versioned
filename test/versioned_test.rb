@@ -367,4 +367,11 @@ class VersionedTest < ActiveSupport::TestCase
     end
     assert ActiveRecord::Base.lock_optimistically
   end
-end
+
+  def test_deleted_in_original_table
+    record = Page::Version.find 1 
+    assert !record.deleted_in_original_table
+    record.page.delete
+    assert record.deleted_in_original_table
+  end
+end 
