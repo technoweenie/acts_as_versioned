@@ -136,6 +136,23 @@ class VersionedTest < ActiveSupport::TestCase
     assert_equal 1, p.version
     Page.feeling_good = true
   end
+  
+  def test_version_if_condition_false_on_first_save
+    Page.feeling_good = false
+    p = Page.create! :title => "title"
+    assert p.version.nil?
+    assert p.versions.empty?
+    Page.feeling_good = true
+  end
+  
+  def test_version_if_condition_false_on_first_save2
+    Page.feeling_good = false
+    p = Page.create! :title => "title"
+    
+    Page.feeling_good = true
+    p.update_attributes(:title => 'new title')
+    assert_equal 1, p.version
+  end
 
   def test_version_if_condition2
     # set new if condition
@@ -146,16 +163,16 @@ class VersionedTest < ActiveSupport::TestCase
     end
 
     p = Page.create! :title => "title"
-    assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions.count
+    assert p.version.nil? # no version gets saved
+    assert p.versions.empty?
 
     p.update_attributes(:title => 'new title')
-    assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions.count
+    assert p.version.nil? # no version gets saved
+    assert p.versions.empty?
 
     p.update_attributes(:title => 'a title')
-    assert_equal 2, p.version
-    assert_equal 2, p.versions.count
+    assert_equal 1, p.version
+    assert_equal 1, p.versions.count
 
     # reset original if condition
     Page.class_eval { alias_method :feeling_good?, :old_feeling_good }
@@ -167,16 +184,16 @@ class VersionedTest < ActiveSupport::TestCase
     Page.version_condition = Proc.new { |page| page.title[0..0] == 'b' }
 
     p = Page.create! :title => "title"
-    assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions.count
+    assert p.version.nil? # no version gets saved
+    assert p.versions.empty?
 
     p.update_attributes(:title => 'a title')
-    assert_equal 1, p.version # version does not increment
-    assert_equal 1, p.versions.count
+    assert p.version.nil? # no version gets saved
+    assert p.versions.empty?
 
     p.update_attributes(:title => 'b title')
-    assert_equal 2, p.version
-    assert_equal 2, p.versions.count
+    assert_equal 1, p.version
+    assert_equal 1, p.versions.count
 
     # reset original if condition
     Page.version_condition = old_condition

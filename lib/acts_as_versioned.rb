@@ -387,11 +387,10 @@ module ActiveRecord #:nodoc:
         end
 
         #:nodoc:
-
         protected
         # sets the new version before saving, unless you're using optimistic locking.  In that case, let it take care of the version.
         def set_new_version
-          @saving_version = new_record? || save_version?
+          @saving_version = save_version?
           self.send("#{self.class.version_column}=", next_version) if new_record? || (!locking_enabled? && save_version?)
         end
 
