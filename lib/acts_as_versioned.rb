@@ -180,7 +180,6 @@ module ActiveRecord #:nodoc:
         self.version_association_options  = {
                                                     :class_name  => "#{self.to_s}::#{versioned_class_name}",
                                                     :foreign_key => versioned_foreign_key,
-                                                    :dependent   => :delete_all
         }.merge(options[:association_options] || {})
 
         if block_given?
@@ -427,8 +426,13 @@ module ActiveRecord #:nodoc:
             end
 
             self.versioned_columns.each do |col|
+              limit = col.limit
+              if col.limit == 10 and col.type == :integer
+                   # Avoid 'No integer type has byte size 10' under MySQL
+                   limit = 8
+              end
               self.connection.add_column versioned_table_name, col.name, col.type,
-                                         :limit     => col.limit,
+                                         :limit     => limit,
                                          :default   => col.default,
                                          :scale     => col.scale,
                                          :precision => col.precision
@@ -442,7 +446,9 @@ module ActiveRecord #:nodoc:
                                          :precision => type_col.precision
             end
 
-            self.connection.add_index versioned_table_name, versioned_foreign_key
+            # Make sure not to create an index that is too long (rails limits index names to 64 characters from version 3.0.3)
+            name = 'index_' + versioned_table_name + '_on_' + versioned_foreign_key
+            self.connection.add_index versioned_table_name, versioned_foreign_key, :name => name[0,63]
           end
 
           # Rake migration task to drop the versioned table
