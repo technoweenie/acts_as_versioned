@@ -1,5 +1,5 @@
 # Copyright (c) 2005 Rick Olson
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
 # "Software"), to deal in the Software without restriction, including
@@ -7,10 +7,10 @@
 # distribute, sublicense, and/or sell copies of the Software, and to
 # permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 # EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -22,7 +22,7 @@ require 'active_support/concern'
 
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
-    # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a 
+    # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a
     # versioned table ready and that your model has a version field.  This works with optimistic locking if the lock_version
     # column is present as well.
     #
@@ -56,7 +56,7 @@ module ActiveRecord #:nodoc:
     #
     # Simple Queries to page between versions
     #
-    #   page.versions.before(version) 
+    #   page.versions.before(version)
     #   page.versions.after(version)
     #
     # Access the previous/next versions from the versioned model itself
@@ -330,12 +330,13 @@ module ActiveRecord #:nodoc:
         # Clones a model.  Used when saving a new version or reverting a model's version.
         def clone_versioned_model(orig_model, new_model)
           self.class.versioned_columns.each do |col|
-            new_model[col.name] = orig_model.send(col.name) if orig_model.has_attribute?(col.name)
+            # new_model[col.name] = orig_model.send(col.name) if orig_model.has_attribute?(col.name)
+            new_model[col.name] = orig_model[col.name] if orig_model.has_attribute?(col.name)
           end
 
           clone_inheritance_column(orig_model, new_model)
         end
-        
+
         def clone_inheritance_column(orig_model, new_model)
           if orig_model.is_a?(self.class.versioned_class) && new_model.class.column_names.include?(new_model.class.inheritance_column.to_s)
             new_model[new_model.class.inheritance_column] = orig_model[self.class.versioned_inheritance_column]
