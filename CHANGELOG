@@ -1,5 +1,15 @@
 *GIT* (version numbers are overrated)
 
+* 0.6.4 2020-12-07 https://github.com/MushroomObserver/acts_as_versioned
+  - Store enums as integers when adding a version
+
+# Following from https://rubygems.org/gems/cure_acts_as_versioned
+
+0.6.3 - March 27, 2014 (18.5 KB)
+0.6.2 - January 26, 2014 (18.5 KB)
+0.6.1 - February 05, 2012 (18.5 KB)
+0.6.0 - June 19, 2011 (18 KB)
+
 * 0.6 (19 Jul 2010) Rails 3 refactoring by gvarela!
 
 * (16 Jun 2008) Backwards Compatibility is overrated (big updates for rails 2.1)
@@ -56,11 +66,11 @@
 
 * (6 Oct 2005) renamed dirty? to changed? to keep it uniform.  it was aliased to keep it backwards compatible.
 
-*0.2* 
+*0.2*
 
 * (6 Oct 2005)  added find_versions and find_version class methods.
 
-* (6 Oct 2005)  removed transaction from create_versioned_table().  
+* (6 Oct 2005)  removed transaction from create_versioned_table().
   this way you can specify your own transaction around a group of operations.
 
 * (30 Sep 2005) fixed bug where find_versions() would order by 'version' twice. (found by Joe Clark)
@@ -79,6 +89,6 @@
 
 * Adding tests and rdocs
 
-*0.1* 
+*0.1*
 
 * Initial transfer from Rails ticket: http://dev.rubyonrails.com/ticket/1974
