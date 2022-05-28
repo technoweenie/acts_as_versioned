@@ -240,7 +240,7 @@ module ActiveRecord #:nodoc:
         extend ActiveSupport::Concern
 
         included do
-          has_many :versions, self.version_association_options
+          has_many :versions, **self.version_association_options
 
           before_save :set_new_version
           after_save :save_version
