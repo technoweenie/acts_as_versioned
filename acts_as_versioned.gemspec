@@ -13,8 +13,8 @@ Gem::Specification.new do |s|
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
   s.name              = 'cure_acts_as_versioned'
-  s.version           = '0.6.3'
-  s.date              = '2014-03-26'
+  s.version           = '0.6.5'
+  s.date              = '2022-05-28'
   s.rubyforge_project = 'acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   ## better to set the email to an email list or something. If you don't have
   ## a custom homepage, consider using your GitHub URL or the like.
   # The real primary author is obviously still Rick Olson, but it seems important
-  # to point to the correct github repo and since Rick is not in charge of that 
+  # to point to the correct github repo and since Rick is not in charge of that
   # particular repo... Ward, 2011-06-19
   #s.authors  = ["Rick Olson"]
   #s.email    = 'technoweenie@gmail.com'
