@@ -1,28 +1,8 @@
-# Copyright (c) 2005 Rick Olson
-# 
-# Permission is hereby granted, free of charge, to any person obtaining
-# a copy of this software and associated documentation files (the
-# "Software"), to deal in the Software without restriction, including
-# without limitation the rights to use, copy, modify, merge, publish,
-# distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so, subject to
-# the following conditions:
-# 
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 require 'active_support/concern'
 
 module ActiveRecord #:nodoc:
   module Acts #:nodoc:
-    # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a 
+    # Specify this act if you want to save a copy of the row in a versioned table.  This assumes there is a
     # versioned table ready and that your model has a version field.  This works with optimistic locking if the lock_version
     # column is present as well.
     #
@@ -56,7 +36,7 @@ module ActiveRecord #:nodoc:
     #
     # Simple Queries to page between versions
     #
-    #   page.versions.before(version) 
+    #   page.versions.before(version)
     #   page.versions.after(version)
     #
     # Access the previous/next versions from the versioned model itself
@@ -180,7 +160,6 @@ module ActiveRecord #:nodoc:
         self.version_association_options  = {
                                                     :class_name  => "#{self.to_s}::#{versioned_class_name}",
                                                     :foreign_key => versioned_foreign_key,
-                                                    :dependent   => :delete_all
         }.merge(options[:association_options] || {})
 
         if block_given?
@@ -261,7 +240,7 @@ module ActiveRecord #:nodoc:
         extend ActiveSupport::Concern
 
         included do
-          has_many :versions, self.version_association_options
+          has_many :versions, **self.version_association_options
 
           before_save :set_new_version
           after_save :save_version
@@ -331,12 +310,17 @@ module ActiveRecord #:nodoc:
         # Clones a model.  Used when saving a new version or reverting a model's version.
         def clone_versioned_model(orig_model, new_model)
           self.class.versioned_columns.each do |col|
-            new_model[col.name] = orig_model.send(col.name) if orig_model.has_attribute?(col.name)
+            next unless orig_model.has_attribute?(col.name)
+
+            val = orig_model[col.name]
+            val = orig_model.defined_enums[col.name][val] \
+              if orig_model.defined_enums.has_key?(col.name)
+            new_model[col.name] = val
           end
 
           clone_inheritance_column(orig_model, new_model)
         end
-        
+
         def clone_inheritance_column(orig_model, new_model)
           if orig_model.is_a?(self.class.versioned_class) && new_model.class.column_names.include?(new_model.class.inheritance_column.to_s)
             new_model[new_model.class.inheritance_column] = orig_model[self.class.versioned_inheritance_column]
@@ -427,8 +411,13 @@ module ActiveRecord #:nodoc:
             end
 
             self.versioned_columns.each do |col|
+              limit = col.limit
+              if col.limit == 10 and col.type == :integer
+                   # Avoid 'No integer type has byte size 10' under MySQL
+                   limit = 8
+              end
               self.connection.add_column versioned_table_name, col.name, col.type,
-                                         :limit     => col.limit,
+                                         :limit     => limit,
                                          :default   => col.default,
                                          :scale     => col.scale,
                                          :precision => col.precision
@@ -442,7 +431,9 @@ module ActiveRecord #:nodoc:
                                          :precision => type_col.precision
             end
 
-            self.connection.add_index versioned_table_name, versioned_foreign_key
+            # Make sure not to create an index that is too long (rails limits index names to 64 characters from version 3.0.3)
+            name = 'index_' + versioned_table_name + '_on_' + versioned_foreign_key
+            self.connection.add_index versioned_table_name, versioned_foreign_key, :name => name[0,63]
           end
 
           # Rake migration task to drop the versioned table

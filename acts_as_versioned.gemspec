@@ -6,28 +6,34 @@
 ## http://docs.rubygems.org/read/chapter/20
 Gem::Specification.new do |s|
   s.specification_version = 2 if s.respond_to? :specification_version=
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
+  s.required_rubygems_version = Gem::Requirement.new('>= 0') if s.respond_to? :required_rubygems_version=
   s.rubygems_version = '1.3.5'
 
   ## Leave these as is they will be modified for you by the rake gemspec task.
   ## If your rubyforge_project name is different, then edit it and comment out
   ## the sub! line in the Rakefile
-  s.name              = 'acts_as_versioned'
-  s.version           = '0.6.0'
-  s.date              = '2012-03-28'
+  s.name              = 'mo_acts_as_versioned'
+  s.version           = '0.6.6'
+  s.date              = '2022-06-12'
   s.rubyforge_project = 'acts_as_versioned'
 
   ## Make sure your summary is short. The description may be as long
   ## as you like.
-  s.summary     = "Add simple versioning to ActiveRecord models."
-  s.description = "Add simple versioning to ActiveRecord models."
+  s.summary     = 'Add simple versioning to ActiveRecord models.'
+  s.description = 'Add simple versioning to ActiveRecord models.'
 
   ## List the primary authors. If there are a bunch of authors, it's probably
   ## better to set the email to an email list or something. If you don't have
   ## a custom homepage, consider using your GitHub URL or the like.
-  s.authors  = ["Rick Olson"]
-  s.email    = 'technoweenie@gmail.com'
-  s.homepage = 'http://github.com/technoweenie/acts_as_versioned'
+  # The real primary author is obviously still Rick Olson, but it seems important
+  # to point to the correct github repo and since Rick is not in charge of that
+  # particular repo... Ward, 2011-06-19
+  # s.authors  = ["Rick Olson"]
+  # s.email    = 'technoweenie@gmail.com'
+  # s.homepage = 'http://github.com/technoweenie/acts_as_versioned'
+  s.authors  = ['Ward Vandewege']
+  s.email    = 'ward@jhvc.com'
+  s.homepage = 'http://github.com/cure/acts_as_versioned'
 
   ## This gets added to the $LOAD_PATH so that 'lib/NAME.rb' can be required as
   ## require 'NAME.rb' or'/lib/NAME/file.rb' can be as require 'NAME/file.rb'
@@ -35,16 +41,16 @@ Gem::Specification.new do |s|
 
   ## Specify any RDoc options here. You'll want to add your README and
   ## LICENSE files to the extra_rdoc_files list.
-  s.rdoc_options = ["--charset=UTF-8"]
-  s.extra_rdoc_files = %w[README MIT-LICENSE CHANGELOG]
+  s.rdoc_options = ['--charset=UTF-8']
+  s.extra_rdoc_files = %w[README.md MIT-LICENSE CHANGELOG]
 
   ## List your runtime dependencies here. Runtime dependencies are those
   ## that are needed for an end user to actually USE your code.
-  s.add_dependency('activerecord', [">= 3.0.9"])
+  s.add_dependency('activerecord', ['>= 3.0.9'])
 
   ## List your development dependencies here. Development dependencies are
   ## those that are only needed during development
-  s.add_development_dependency('sqlite3-ruby', [">= 1.3.1"])
+  s.add_development_dependency('sqlite3-ruby', ['>= 1.3.1'])
 
   ## Leave this section as-is. It will be automatically generated from the
   ## contents of your Git repository via the gemspec task. DO NOT REMOVE
@@ -54,7 +60,7 @@ Gem::Specification.new do |s|
     CHANGELOG
     Gemfile
     MIT-LICENSE
-    README
+    README.md
     RUNNING_UNIT_TESTS
     Rakefile
     acts_as_versioned.gemspec
@@ -81,5 +87,5 @@ Gem::Specification.new do |s|
 
   ## Test files will be grabbed from the file list. Make sure the path glob
   ## matches what you actually use.
-  s.test_files = s.files.select { |path| path =~ /^test\/test_.*\.rb/ }
+  s.test_files = s.files.select { |path| path =~ %r{^test/test_.*\.rb} }
 end
